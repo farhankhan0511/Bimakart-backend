@@ -23,6 +23,10 @@ app.use(express.static("public"))
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ limit: "16kb", extended: true }));
 
+
+app.set("trust proxy", true);
+//temporary for swagger hai
+
 import AuthRoutes from "./Routes/Auth.Routes.js";
 import UserRoutes from "./Routes/User.Routes.js";
 app.use("/api/auth", AuthRoutes);
