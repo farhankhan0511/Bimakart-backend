@@ -1,7 +1,8 @@
 import { asynchandler } from "../Utils/asynchandler.js";
 import bimapi from "../Lib/AxiosClient.js";
 import { checkMobileExistsSchema, signupSchema } from "../Utils/zodschemas.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../Utils/ApiResponse.js";
+
 
 
 // just an helper fuction to check mobile exist or not #currently not used anywhere
