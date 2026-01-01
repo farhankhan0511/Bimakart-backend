@@ -15,7 +15,7 @@ const options = {
     },
     servers: [
       {
-        url: process.env.DEPLOYED_URL || "https://bimakart-backend.onrender.com",
+        url: "https://bimakart-backend.onrender.com",
         description: "Production server",
       },
     ],
@@ -28,14 +28,11 @@ const options = {
         },
       },
     },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
+    security: [{ bearerAuth: [] }],
   },
-
-  apis: [path.join(__dirname, "../routes/**/*.js")],
+  apis: [
+    path.resolve(process.cwd(), "src/routes/**/*.js"),
+  ],
 };
 
 export const swaggerSpec = swaggerJSDoc(options);

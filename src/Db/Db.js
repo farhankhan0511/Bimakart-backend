@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 
 const connectDB = async () => {
   try {
@@ -9,6 +10,11 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(uri);
     
+    await UserPolicies.syncIndexes();
+    await UserPolicies.updateMany(
+      { "processing.inProgress": true },
+      { $set: { "processing.inProgress": false } }
+    );    
     console.log(`MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
     console.error("MongoDB connection failed");

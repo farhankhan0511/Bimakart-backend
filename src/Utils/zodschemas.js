@@ -8,5 +8,34 @@ export const signupSchema = z.object({
     mobile: z.string().regex(/^[1-9]\d{9}$/, "Invalid mobile number").min(10, "Mobile number must be at least 10 digits").max(10, "Mobile number must be at most 10 digits"),
     name: z.string().min(2, "Name must be at least 2 characters"),
     source: z.string().optional(),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+
+
+export const updatesSchema = z.object({
+  mobile: z.string().regex(/^[1-9]\d{9}$/, "Invalid mobile number").min(10, "Mobile number must be at least 10 digits").max(10, "Mobile number must be at most 10 digits"),
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100),
+
+  email: z.email("Invalid email address"),
+
+  dob: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "DOB must be in YYYY-MM-DD format"),
+
+  gender: z
+    .enum(["Male", "Female", "Transgender"]),
+
+  occupation: z
+    .string()
+    .min(2)
+    .max(100),
+
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128),
 });
