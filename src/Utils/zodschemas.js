@@ -39,3 +39,39 @@ export const updatesSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .max(128),
 });
+
+
+
+
+export const loanRequestSchema = z.object({
+  pan: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN format"),
+
+  mobileNo: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
+
+  pinCode: z
+    .string()
+    .regex(/^[1-9][0-9]{5}$/, "Invalid PIN code"),
+
+  dob: z
+    .string()
+   .regex(
+  /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/,
+  "DOB must be in YYYY-MM-DD format with valid month and day"
+),
+
+  loanAmount: z
+    .union([z.string(), z.number()])
+    .transform((val) => Number(val))
+    .refine((val) => !isNaN(val) && val > 0, {
+      message: "Loan amount must be a valid positive number",
+    }),
+
+  customerName: z
+    .string()
+    .min(2)
+    .max(100),
+});

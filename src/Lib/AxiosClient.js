@@ -5,6 +5,8 @@ const bimapi = axios.create({
   baseURL: process.env.BIMAPI,
 });
 
+
+
 bimapi.interceptors.request.use(async (config) => {
   const token = await getAccessToken();
   config.headers.Authorization = `Bearer ${token}`;

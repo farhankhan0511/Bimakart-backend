@@ -26,7 +26,7 @@ async function downloadPDF(url, filename) {
       url,
       method: "GET",
       responseType: "stream",
-      timeout: 15000,
+      timeout: 20000,
     });
 
     await new Promise((resolve, reject) => {
@@ -35,7 +35,7 @@ async function downloadPDF(url, filename) {
       writer.on("finish", resolve);
       writer.on("error", reject);
     });
-  }, 3, 1500);
+  }, 3, 17000);
   return filePath;
 }
 export async function cleanupFiles(filePaths = []) {
@@ -122,7 +122,7 @@ async function getPoliciesfrombasecodeApi(mobile){
 
     await withRetry(() => {
       return fs.promises.writeFile(filePath, base64, "utf8");
-    }, 3, 1000);
+    }, 3, 8000);
 
     savedFiles.push(path.relative(process.cwd(), filePath));
   }

@@ -29,8 +29,10 @@ app.set("trust proxy", true);
 
 import AuthRoutes from "./Routes/Auth.Routes.js";
 import UserRoutes from "./Routes/User.Routes.js";
+import PaymentRoutes from "./Routes/Payment.Routes.js";
 app.use("/api/auth", AuthRoutes);
 app.use("/api/user", UserRoutes);
+app.use("/api/payment", PaymentRoutes);
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 export default app;
