@@ -5,7 +5,7 @@ import { checkMobileExist, SignupUser,VerifyPassword } from "../Controllers/Auth
 const router=Router()
 
 /**
- * @swagger
+ * @openapi
  * /auth/check-mobile:
  *   post:
  *     summary: Check if mobile number exists
@@ -32,7 +32,7 @@ router.post("/checkmobileexist",checkMobileExist)
 
 
 /**
- * @swagger
+ * @openapi
  * /auth/signup:
  *   post:
  *     summary: Signup and create a new user
@@ -74,7 +74,7 @@ router.post("/checkmobileexist",checkMobileExist)
 router.post("/signup", SignupUser);
 
 /**
- * @swagger
+ * @openapi
  * /auth/login:
  *   post:
  *     summary: Verify password and login user

@@ -5,7 +5,7 @@ import { getUserPolicies } from "../Controllers/Policy.Controller.js";
 const router=Router()
 
 /**
- * @swagger
+ * @openapi
  * /auth/getUserDetails:
  *   post:
  *     summary: Get user details by mobile number
@@ -38,7 +38,7 @@ router.post("/getUserDetails", getUserDetails);
 
 
 /**
- * @swagger
+ * @openapi
  * /updateUserDetails:
  *   post:
  *     summary: Update user details
@@ -105,7 +105,7 @@ router.post("/getUserDetails", getUserDetails);
 router.post("/updateUserDetails", updateUserDetails);
 
 /**
- * @swagger
+ * @openapi
  * /policydata:
  *   post:
  *     summary: Get user policy data
