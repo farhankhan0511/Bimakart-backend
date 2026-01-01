@@ -19,20 +19,13 @@ const options = {
         description: "Production server",
       },
     ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
-      },
-    },
-    security: [{ bearerAuth: [] }],
   },
+
   apis: [
-    path.resolve(process.cwd(), "src/routes/**/*.js"),
+    path.join(__dirname, "../Routes/**/*.js")
   ],
 };
+
+
 
 export const swaggerSpec = swaggerJSDoc(options);
