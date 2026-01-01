@@ -31,11 +31,8 @@ const options = {
     security: [{ bearerAuth: [] }],
   },
   apis: [
-    path.resolve(process.cwd(), "/**/*.js"),
+    path.resolve(process.cwd(), "src/routes/**/*.js"),
   ],
 };
-console.log("Swagger scanning from:", process.cwd());
-
-
 
 export const swaggerSpec = swaggerJSDoc(options);
