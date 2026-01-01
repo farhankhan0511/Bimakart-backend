@@ -3,6 +3,7 @@ import bimapi from "../Lib/AxiosClient.js";
 import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
+import os from "os";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -10,7 +11,7 @@ import axios from "axios";
 import { withRetry } from "../Utils/Retry.js";
 import { checkMobileExistsSchema } from "../Utils/zodschemas.js";
 import FormData from "form-data";
-import { file } from "zod";
+import pLimit from "p-limit";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -18,26 +19,73 @@ const DOWNLOAD_DIR = path.join(__dirname, "../downloads");
 if (!fs.existsSync(DOWNLOAD_DIR)) {
   fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
 }
-async function downloadPDF(url, filename) {
-  const filePath = path.join(DOWNLOAD_DIR, filename);
 
-  await withRetry(async () => {
-    const response = await axios({
-      url,
-      method: "GET",
-      responseType: "stream",
-      timeout: 20000,
-    });
 
-    await new Promise((resolve, reject) => {
-      const writer = fs.createWriteStream(filePath);
-      response.data.pipe(writer);
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
-  }, 3, 17000);
-  return filePath;
+const MAX_GLOBAL_DOWNLOADS = Math.max(2, os.cpus().length);
+const globalDownloadLimit = pLimit(MAX_GLOBAL_DOWNLOADS);
+
+export async function downloadPDFs(urls, downloadDir) {
+  const tasks = urls.map((url, index) =>
+    downloadPDF(url, path.join(downloadDir, `file_${index + 1}.pdf`))
+  );
+
+  return Promise.all(tasks);
 }
+
+
+export async function downloadPDF(url, filePath) {
+  return globalDownloadLimit(() =>
+    withRetry(
+      async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 22000); // hard max 20s
+
+        let writer;
+        try {
+          const response = await axios.get(url, {
+            responseType: "stream",
+            signal: controller.signal,
+            timeout: 10000, // headers timeout
+          });
+
+          await new Promise((resolve, reject) => {
+            writer = fs.createWriteStream(filePath);
+
+            // Stream inactivity timeout so that 
+            let streamTimeout = setTimeout(
+              () => reject(new Error("Stream stalled")),
+              17000
+            );
+
+            response.data.on("data", () => {
+              clearTimeout(streamTimeout);
+              streamTimeout = setTimeout(
+                () => reject(new Error("Stream stalled")),
+                17000
+              );
+            });
+
+            response.data.on("end", () => clearTimeout(streamTimeout));
+            response.data.on("error", reject);
+
+            writer.on("finish", resolve);
+            writer.on("error", reject);
+
+            response.data.pipe(writer);
+          });
+
+          return filePath;
+        } finally {
+          clearTimeout(timeoutId);
+          writer?.destroy();
+        }
+      },
+      { retries: 2, delay: 1500, label: "PDF-DOWNLOAD" }
+    )
+  );
+}
+
+
 export async function cleanupFiles(filePaths = []) {
   for (const filePath of filePaths) {
     const absolutePath = path.join(process.cwd(), filePath);
@@ -91,17 +139,12 @@ async function getPoliciesfromURLApi(mobile){
     .map(p => p.downloadUrl)
     .filter(Boolean);
     console.log("Valid URLs:", validUrls);
-    const savedFiles = [];
+  
 
-    for (let i = 0; i < validUrls.length; i++) {
-        const url = validUrls[i];
-
-        const filename = `policy_${mobile}_${i + 1}.pdf`;
-        const filePath = await downloadPDF(url, filename);
-
-        // store RELATIVE path
-        savedFiles.push(path.relative(process.cwd(), filePath));
-    }
+    const downloadedFiles = await downloadPDFs(validUrls, DOWNLOAD_DIR);
+    console.log("Downloaded Files from URL API:", downloadedFiles); 
+    const savedFiles = downloadedFiles.map(filePath => path.relative(process.cwd(), filePath));
+    console.log("Downloaded Files:", savedFiles);
     return savedFiles;
     
 }
@@ -110,7 +153,7 @@ async function getPoliciesfrombasecodeApi(mobile){
     if(!mobile) throw new Error("Mobile number is required");
     const response=await bimapi.post("/policiesPDFs",{mobile});
     const policies = response.data.policies || [];
-    console.log("Policies from Basecode API:", policies);
+   
     const savedFiles = [];
 
   for (let i = 0; i < policies.length; i++) {
@@ -122,7 +165,7 @@ async function getPoliciesfrombasecodeApi(mobile){
 
     await withRetry(() => {
       return fs.promises.writeFile(filePath, base64, "utf8");
-    }, 3, 8000);
+    }, 2, 1500);
 
     savedFiles.push(path.relative(process.cwd(), filePath));
   }
@@ -166,6 +209,7 @@ export async function extractPolicyDetailsFromFile(filePath) {
 
 export const getUserPolicies=asynchandler(async(req,res,next)=>{
     const {mobile,refresh}=req.body;
+    let savedFiles = [];
     try {
         if (!mobile) {
             return res.status(400).json(new ApiResponse(400,{},"Mobile number is required"));
@@ -198,7 +242,7 @@ export const getUserPolicies=asynchandler(async(req,res,next)=>{
         console.log("Lock acquired for mobile:", mobile);
         // As now that the lock is acquired it means no redundant process and hence safe to start
         // firstly getting policies from api which gives uls
-        let savedFiles = await getPoliciesfromURLApi(mobile);
+        savedFiles = await getPoliciesfromURLApi(mobile);
         console.log("Files downloaded from URL API:", savedFiles);
         // now getting policies from basecode api
         const basecodeFiles = await getPoliciesfrombasecodeApi(mobile);
@@ -213,11 +257,7 @@ export const getUserPolicies=asynchandler(async(req,res,next)=>{
                 const policyDetails = await extractPolicyDetailsFromFile(filePath);
                 console.log(`Extracted policy details from file ${filePath}:`, policyDetails);
                 if (policyDetails) {
-                    if (filePath.endsWith(".txt")) {
-                        policyDetails.source = "basecode";
-                    } else {
-                        policyDetails.source = "url";
-                    }
+                    policyDetails.source = filePath.endsWith(".txt") ? "basecode" : "url";
                     delete policyDetails["validation"];
                     delete policyDetails["empty_datasets"];
                     allPolicies.push(policyDetails);
@@ -226,31 +266,32 @@ export const getUserPolicies=asynchandler(async(req,res,next)=>{
                 console.error(`Error extracting policy from file ${filePath}:`, err.message);
             }
         }
-        //for testing purpose only
-         await releaseLock(mobile);
-        await cleanupFiles(savedFiles);
-
+       
+        
+       
         
         // return res.status(200).json(new ApiResponse(200,{source:"api",data:allPolicies},"User policies retrieved successfully from API"));
         if (existingRecord) {
-         await UserPolicies.updateOne(
+         const newlyUpdatedRecord = await UserPolicies.findOneAndUpdate(
             { mobile },
             {
                 $set: {
                     policies: allPolicies,
                     "processing.inProgress": false,
                 }
-            }
+            },
+           { returnDocument: "after" }
         );  
-        const newlyUpdatedRecord = await UserPolicies.findOne({ mobile });
+       
         return res.status(200).json(new ApiResponse(200,{source:"api",data:newlyUpdatedRecord},"User policies retrieved successfully from API"));
         }
         else {
-        await UserPolicies.create({
+         const newlyCreatedRecord =await UserPolicies.create({
             mobile,
             policies: allPolicies,
-        });
-        const newlyCreatedRecord = await UserPolicies.findOne({ mobile });
+        },
+   );
+       
 
         return res.status(200).json(new ApiResponse(200,{source:"api",data:newlyCreatedRecord},"User policies retrieved successfully from API"));
         }        
@@ -261,6 +302,8 @@ export const getUserPolicies=asynchandler(async(req,res,next)=>{
     }
     finally {
        releaseLock(mobile);
+    await cleanupFiles(savedFiles);
+
     }
 
 });
