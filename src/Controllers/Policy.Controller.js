@@ -24,21 +24,16 @@ if (!fs.existsSync(DOWNLOAD_DIR)) {
 const MAX_GLOBAL_DOWNLOADS = Math.max(2, os.cpus().length);
 const globalDownloadLimit = pLimit(MAX_GLOBAL_DOWNLOADS);
 
-export async function downloadPDFs(urls, downloadDir) {
-  const tasks = urls.map((url, index) =>
-    downloadPDF(url, path.join(downloadDir, `file_${index + 1}.pdf`))
-  );
-
-  return Promise.all(tasks);
-}
-
-
 export async function downloadPDF(url, filePath) {
   return globalDownloadLimit(() =>
     withRetry(
       async () => {
         const controller = new AbortController();
-        const hardTimeout = setTimeout(() => controller.abort(), 22000);
+        // Increased timeout for production environments
+        const HARD_TIMEOUT = 60000; // 60 seconds
+        const STREAM_TIMEOUT = 30000; // 30 seconds
+        
+        const hardTimeout = setTimeout(() => controller.abort(), HARD_TIMEOUT);
 
         let writer;
         let streamTimeout;
@@ -47,21 +42,27 @@ export async function downloadPDF(url, filePath) {
           const response = await axios.get(url, {
             responseType: "stream",
             signal: controller.signal,
+            timeout: 50000, // Add axios timeout
+            maxRedirects: 5,
           });
-          const fail = (err) => {
-                writer?.destroy(err);   
-                reject(err);
-            };
 
           await new Promise((resolve, reject) => {
             writer = fs.createWriteStream(filePath);
 
-            // stream inactivity watchdog
+            // Define fail function AFTER reject is available
+            const fail = (err) => {
+              clearTimeout(streamTimeout);
+              clearTimeout(hardTimeout);
+              writer?.destroy();
+              reject(err);
+            };
+
+            // Stream inactivity watchdog
             const resetStreamTimeout = () => {
               clearTimeout(streamTimeout);
               streamTimeout = setTimeout(
-                () => reject(new Error("Stream stalled")),
-                17000
+                () => fail(new Error("Stream stalled - no data received")),
+                STREAM_TIMEOUT
               );
             };
 
@@ -70,27 +71,83 @@ export async function downloadPDF(url, filePath) {
             response.data.on("data", resetStreamTimeout);
             response.data.on("error", fail);
 
-            writer.on("finish", resolve);
+            writer.on("finish", () => {
+              clearTimeout(streamTimeout);
+              clearTimeout(hardTimeout);
+              resolve();
+            });
             writer.on("error", fail);
 
             response.data.pipe(writer);
           });
 
+          // Verify file was created and has content
+          const stats = await fs.promises.stat(filePath);
+          if (stats.size === 0) {
+            throw new Error("Downloaded file is empty");
+          }
+
+          console.log(`✓ Downloaded: ${path.basename(filePath)} (${stats.size} bytes)`);
           return filePath;
+          
         } catch (err) {
-          if (err.name === "AbortError") {
-            throw new Error("Download hard-timeout exceeded");
+          // Clean up partial file on error
+          if (fs.existsSync(filePath)) {
+            try {
+              await fs.promises.unlink(filePath);
+            } catch (unlinkErr) {
+              console.error(`Failed to cleanup partial file ${filePath}:`, unlinkErr.message);
+            }
+          }
+
+          if (err.name === "AbortError" || err.code === "ECONNABORTED") {
+            throw new Error(`Download timeout exceeded for ${url}`);
+          }
+          if (err.code === "ECONNRESET" || err.code === "ETIMEDOUT") {
+            throw new Error(`Network error downloading ${url}: ${err.message}`);
           }
           throw err;
         } finally {
           clearTimeout(hardTimeout);
           clearTimeout(streamTimeout);
-          
+          if (writer && !writer.destroyed) {
+            writer.destroy();
+          }
         }
       },
-      { retries: 2, delay: 1500, label: "PDF-DOWNLOAD" }
+      { retries: 3, delay: 2000, label: `PDF-DOWNLOAD(${path.basename(filePath)})` }
     )
   );
+}
+
+// Improved parallel download with better error handling
+export async function downloadPDFs(urls, downloadDir) {
+  if (!urls || urls.length === 0) {
+    console.log("No URLs to download");
+    return [];
+  }
+
+  console.log(`Starting download of ${urls.length} files...`);
+  
+  const tasks = urls.map((url, index) => {
+    const fileName = `file_${index + 1}.pdf`;
+    const filePath = path.join(downloadDir, fileName);
+    
+    return downloadPDF(url, filePath)
+      .catch(err => {
+        console.error(`Failed to download ${url}:`, err.message);
+        return null; // Return null instead of failing entire batch
+      });
+  });
+
+  const results = await Promise.all(tasks);
+  
+  // Filter out failed downloads (null values)
+  const successfulDownloads = results.filter(Boolean);
+  
+  console.log(`Downloaded ${successfulDownloads.length}/${urls.length} files successfully`);
+  
+  return successfulDownloads;
 }
 
 
@@ -262,6 +319,9 @@ export const getUserPolicies=asynchandler(async(req,res,next)=>{
         const basecodeFiles = await getPoliciesfrombasecodeApi(mobile);
         console.log("Files downloaded from Basecode API:", basecodeFiles);
         savedFiles = savedFiles.concat(basecodeFiles);
+        if(savedFiles.length===0){
+            return res.status(404).json(new ApiResponse(404,{},"No policies found for this mobile number"));
+        }
 
         // Now running the ocr service on each file to extract policy details
         const allPolicies = [];
