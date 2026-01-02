@@ -45,7 +45,7 @@ export async function downloadPDF(url, filePath) {
           const response = await axios.get(url, {
             responseType: "stream",
             signal: controller.signal,
-            timeout: 10000, // headers timeout
+           
           });
 
           await new Promise((resolve, reject) => {
