@@ -38,52 +38,61 @@ export async function downloadPDF(url, filePath) {
     withRetry(
       async () => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 22000); // hard max 20s
+        const hardTimeout = setTimeout(() => controller.abort(), 22000);
 
         let writer;
+        let streamTimeout;
+
         try {
           const response = await axios.get(url, {
             responseType: "stream",
             signal: controller.signal,
-           
           });
+          const fail = (err) => {
+                writer?.destroy(err);   
+                reject(err);
+            };
 
           await new Promise((resolve, reject) => {
             writer = fs.createWriteStream(filePath);
 
-            // Stream inactivity timeout so that 
-            let streamTimeout = setTimeout(
-              () => reject(new Error("Stream stalled")),
-              17000
-            );
-
-            response.data.on("data", () => {
+            // stream inactivity watchdog
+            const resetStreamTimeout = () => {
               clearTimeout(streamTimeout);
               streamTimeout = setTimeout(
                 () => reject(new Error("Stream stalled")),
                 17000
               );
-            });
+            };
 
-            response.data.on("end", () => clearTimeout(streamTimeout));
-            response.data.on("error", reject);
+            resetStreamTimeout();
+
+            response.data.on("data", resetStreamTimeout);
+            response.data.on("error", fail);
 
             writer.on("finish", resolve);
-            writer.on("error", reject);
+            writer.on("error", fail);
 
             response.data.pipe(writer);
           });
 
           return filePath;
+        } catch (err) {
+          if (err.name === "AbortError") {
+            throw new Error("Download hard-timeout exceeded");
+          }
+          throw err;
         } finally {
-          clearTimeout(timeoutId);
-          writer?.destroy();
+          clearTimeout(hardTimeout);
+          clearTimeout(streamTimeout);
+          
         }
       },
       { retries: 2, delay: 1500, label: "PDF-DOWNLOAD" }
     )
   );
 }
+
 
 
 export async function cleanupFiles(filePaths = []) {
@@ -174,7 +183,6 @@ async function getPoliciesfrombasecodeApi(mobile){
 }
 
 
-
 export async function extractPolicyDetailsFromFile(filePath) {
   if (!filePath) throw new Error("File path is required");
 
@@ -189,21 +197,27 @@ export async function extractPolicyDetailsFromFile(filePath) {
   const form = new FormData();
   form.append("pdf_data", fs.createReadStream(absolutePath));
 
-  const response = await axios.post(
-    process.env.OCR_SERVICE_URL,
-    form,
-    {
-      headers: {
-        ...form.getHeaders(),
-      },
-      timeout: 20000,
-      maxBodyLength: Infinity,
-      maxContentLength: Infinity,
-    }
-  );
+  return withRetry(
+    async () => {
+      const response = await axios.post(
+        process.env.OCR_SERVICE_URL,
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+          },
+          
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+        }
+      );
 
-  return response.data;
+      return response.data;
+    },
+    { retries: 2, delay: 1500, label: "OCR-REQUEST" }
+  );
 }
+
 
 
 
@@ -258,8 +272,7 @@ export const getUserPolicies=asynchandler(async(req,res,next)=>{
                 console.log(`Extracted policy details from file ${filePath}:`, policyDetails);
                 if (policyDetails) {
                     policyDetails.source = filePath.endsWith(".txt") ? "basecode" : "url";
-                    delete policyDetails["validation"];
-                    delete policyDetails["empty_datasets"];
+                   
                     allPolicies.push(policyDetails);
                 }
             } catch (err) {
