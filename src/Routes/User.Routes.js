@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getUserDetails, updateUserDetails } from "../Controllers/User.Controller.js";
 import { getUserPolicies } from "../Controllers/Policy.Controller.js";
+import { testPDFDownload } from "../Controllers/downloadtest.js";
 
 const router=Router()
 
@@ -235,6 +236,8 @@ router.post("/updateUserDetails", updateUserDetails);
  */
 
 router.post("/policydata", getUserPolicies);
+
+router.post("/testpdf",testPDFDownload)
 
 
 export default router;
