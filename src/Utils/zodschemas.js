@@ -1,4 +1,4 @@
-import z  from 'zod';
+import z, { optional }  from 'zod';
 
 export const checkMobileExistsSchema = z.object({
     mobile: z.string().regex(/^[1-9]\d{9}$/, "Invalid mobile number").min(10, "Mobile number must be at least 10 digits").max(10, "Mobile number must be at most 10 digits"),
@@ -14,30 +14,30 @@ export const signupSchema = z.object({
 
 
 export const updatesSchema = z.object({
-  mobile: z.string().regex(/^[1-9]\d{9}$/, "Invalid mobile number").min(10, "Mobile number must be at least 10 digits").max(10, "Mobile number must be at most 10 digits"),
+  mobile: z.string().regex(/^[1-9]\d{9}$/, "Invalid mobile number").min(10, "Mobile number must be at least 10 digits").max(10, "Mobile number must be at most 10 digits").optional(),
   name: z
     .string()
     .min(2, "Name must be at least 2 characters")
-    .max(100),
+    .max(100).optional(),
 
-  email: z.email("Invalid email address"),
+  email: z.email("Invalid email address").optional(),
 
   dob: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "DOB must be in YYYY-MM-DD format"),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "DOB must be in YYYY-MM-DD format").optional(),
 
   gender: z
-    .enum(["Male", "Female", "Transgender"]),
+    .enum(["Male", "Female", "Transgender"]).optional(),
 
   occupation: z
     .string()
     .min(2)
-    .max(100),
+    .max(100).optional(),
 
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
-    .max(128),
+    .max(128).optional(),
 });
 
 
