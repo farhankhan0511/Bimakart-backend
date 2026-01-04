@@ -235,9 +235,10 @@ router.post("/updateUserDetails", updateUserDetails);
  *         description: Internal server error
  */
 
+
 router.post("/policydata", getUserPolicies);
 
-router.post("/testpdf",testPDFDownload)
+
 
 
 export default router;

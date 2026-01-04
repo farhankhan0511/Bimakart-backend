@@ -11,7 +11,7 @@ async function bootstrap() {
     console.log("DB connected");
     await fetchNewToken();
     console.log("Initial token fetched");
-    app.listen(port, () => {
+    app.listen(port,"0.0.0.0", () => {
       console.log(`Server running at http://localhost:${port}`);
     });
   } catch (err) {

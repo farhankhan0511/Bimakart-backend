@@ -75,3 +75,137 @@ export const loanRequestSchema = z.object({
     .min(2)
     .max(100),
 });
+
+
+const vehicleNumberRegex =
+  /^[A-Z]{2}\d{1,2}[A-Z]{1,2}\d{4}$/;
+
+
+const mobileNumberRegex =
+  /^[6-9]\d{9}$/;
+
+export const MotorPolicySchema = z.object({
+  fullName: z
+    .string()
+    .min(3, "Full name must be at least 3 characters")
+    .max(100, "Full name is too long")
+    .regex(/^[A-Za-z\s]+$/, "Full name must contain only letters and spaces"),
+
+  vehicleNumber: z.string().toUpperCase().regex(vehicleNumberRegex, "Invalid vehicle number format"),
+    
+
+  mobileNumber: z.string().regex(mobileNumberRegex, "Invalid mobile number"),
+
+  whatsappNumber: z
+    .string()
+    .regex(mobileNumberRegex, "Invalid WhatsApp number"),
+
+  vehicleType: z.string().min(1, "Vehicle type is required"),
+
+  paymentMode: z
+    .enum(["Credit", "Prepaid"], {
+      errorMap: () => ({
+        message: "Payment mode must be Credit or Prepaid",
+      }),
+    }),
+});
+
+
+
+export const RudrakshSchema = z.object({
+  prefix: z.enum(["Mr.", "Miss.", "Mrs.", "Ms."]),
+
+  firstName: z
+    .string()
+    .min(2, "First name too short")
+    .max(40),
+
+  lastName: z
+    .string()
+    .min(2, "Last name too short")
+    .max(80),
+
+  dob: z
+    .string()
+    .regex(
+      /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+      "DOB must be in DD/MM/YYYY format"
+    ),
+
+  mobile: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
+
+  gender: z.enum(["M", "F", "O"]),
+
+  email: z
+    .email("Invalid email address"),
+
+  pan: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN number"),
+
+  nomineeName: z
+    .string()
+    .min(2)
+    .max(255),
+
+  nomineeRelation: z.enum([
+    "Father",
+    "Mother",
+    "Wife",
+    "Husband",
+    "Son",
+    "Daughter",
+  ]),
+
+  nomineeAge: z
+    .number()
+    .int()
+    .min(0)
+    .max(120),
+
+
+});
+
+
+
+export const HealthInsuranceSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, "First name too short")
+    .max(40),
+
+  lastName: z
+    .string()
+    .min(2, "Last name too short")
+    .max(80),
+
+  insureFor: z.enum([
+    "Self",
+    "Spouse",
+    "Son",
+    "Daughter",
+    "Father",
+    "Mother",
+  ]),
+
+  email: z
+    .email("Invalid email address"),
+
+  mobile: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
+
+  whatsappNumber: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Invalid WhatsApp number")
+    .optional(),
+
+  pinCode: z
+    .string()
+    .regex(/^[1-9][0-9]{5}$/, "Invalid Indian pin code")
+    .optional(),
+});
+
+
