@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getUserDetails, updateUserDetails } from "../Controllers/User.Controller.js";
 import { getUserPolicies, UploadPolicy } from "../Controllers/Policy.Controller.js";
 import { upload } from "../Middlewares/upload.middleware.js";
+import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
 
 const router=Router()
@@ -36,7 +37,7 @@ const router=Router()
  *       500:
  *         description: Internal server error
  */
-router.post("/getUserDetails", getUserDetails);
+router.post("/getUserDetails", verifyJWT,getUserDetails);
 
 
 /**
@@ -104,7 +105,7 @@ router.post("/getUserDetails", getUserDetails);
  *       500:
  *         description: Internal server error
  */
-router.post("/updateUserDetails", updateUserDetails);
+router.post("/updateUserDetails", verifyJWT, updateUserDetails);
 
 /**
  * @openapi
@@ -237,11 +238,11 @@ router.post("/updateUserDetails", updateUserDetails);
  */
 
 
-router.post("/policydata", getUserPolicies);
+router.post("/policydata", verifyJWT, getUserPolicies);
 
 
 
-router.post("/uploadpolicy",upload.single("newpolicy"),UploadPolicy)
+router.post("/uploadpolicy",verifyJWT,upload.single("newpolicy"),UploadPolicy)
 
 
 

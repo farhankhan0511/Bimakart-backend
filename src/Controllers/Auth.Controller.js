@@ -1,7 +1,9 @@
 import { asynchandler } from "../Utils/asynchandler.js";
 import bimapi from "../Lib/AxiosClient.js";
 import { checkMobileExistsSchema, signupSchema } from "../Utils/zodschemas.js";
-import { ApiResponse } from "../Utils/ApiResponse.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { authtokens } from "../Models/Auth.Model.js";
+import jwt from "jsonwebtoken"
 
 
 
@@ -19,6 +21,22 @@ async function checkMobileNumberExists(mobile){
         throw new Error("Error checking mobile number existence");
     }
 }
+
+
+const generateAccessAndRefreshToken = async (mobile) => {
+  const author = await authtokens.findOne({ mobile });
+
+  if (!author) throw new Error("Auth record not found");
+
+  const accessToken = author.generateAccessToken();
+  const refreshToken = author.generateRefreshToken();
+
+  author.refreshToken = refreshToken;
+  await author.save({ validateBeforeSave: false });
+
+  return { accessToken, refreshToken };
+};
+
 
 // This will be used wether a mobile number already exist on the salesforce db or not
 export const checkMobileExist=asynchandler(async(req,res,next)=>{
@@ -51,9 +69,17 @@ export const SignupUser=asynchandler(async(req,res,next)=>{
         const response=await bimapi.post("/accountSignupUser",{mobile,name,source,password});
         if (response.data.success ===null) {
             return res.status(400).json(new ApiResponse(400,{},response.data.message || "Mobile already exists"));
-        }
+        } 
+        await authtokens.findOneAndUpdate(
+        { mobile },
+        {},
+        { upsert: true, new: true }
+        );
+
+        const {accessToken,refreshToken}= await generateAccessAndRefreshToken(mobile)     
+
         if(response.data.success){
-            return res.status(200).json(new ApiResponse(200,response.data,"User signup successful"));
+            return res.status(200).json(new ApiResponse(200,{data:response.data,accessToken:accessToken,refreshToken:refreshToken},"User signup successful"));
         }
         
         return res.status(400).json(new ApiResponse(400,{},response.data.message || "Bad Request or Mobile already exists"));
@@ -76,19 +102,85 @@ export const VerifyPassword=asynchandler(async(req,res,next)=>{
             return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number format"));
         }
         const response=await bimapi.post("/verifyPasswordAccount",{mobile,encryptedPassword});
+        await authtokens.findOneAndUpdate(
+            { mobile },
+            {},
+            { upsert: true, new: true }
+            );
+
+        
       
-        if(response.data.valid){
-            return res.status(200).json(new ApiResponse(200,response.data,"Password verification successful"));
+        if(!response.data.valid){
+            return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number or Wrong password"));
         }
-        return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number or Wrong password"));
+        const {accessToken,refreshToken}= await generateAccessAndRefreshToken(mobile) 
+        return res.status(200).json(new ApiResponse(200,{data:response.data,accessToken:accessToken,refreshToken:refreshToken},"Password verification successful"));
         
     } catch (error) {
-        return res.status(500).json(new ApiResponse(500,{},"Internal server error"));
+        return res.status(500).json(new ApiResponse(500,{},error.message ||"Internal server error"));
     }
 });
 
 
+export const refreshAccessToken = asynchandler(async (req, res) => {
+  const { refreshToken } = req.body;
 
+  try {
+    if (!refreshToken) {
+      return res.status(401).json(new ApiResponse(401, {}, "Refresh token required"));
+    }
+  
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch (err) {
+      return res.status(401).json(
+        new ApiResponse(401, {}, "Refresh token expired or invalid")
+      );
+    }
+  
+    const auth = await authtokens.findById(decoded._id);
+    if (!auth || auth.refreshToken !== refreshToken) {
+      return res.status(401).json(new ApiResponse(401, {}, "Invalid refresh token"));
+    }
+  
+    const newAccessToken = auth.generateAccessToken();
+  
+    return res.status(200).json(
+      new ApiResponse(200, { accessToken: newAccessToken }, "Token refreshed")
+    );
+  
+  } catch (error) {
+    return res.status(500).json(new ApiResponse(500,{},"Internal server error"))
+  }});
+
+
+  // this will be used by users who sign in using otp
+export const getUserTokens =asynchandler(async(req,res) =>{
+    const {mobile}=req.body;
+    try {
+        if (!mobile) {
+            return res.status(400).json(new ApiResponse(400,{},"Mobile number is required"));
+        }
+        if(!checkMobileExistsSchema.safeParse({mobile}).success){
+            return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number format"));
+        }
+        await authtokens.findOneAndUpdate(
+            { mobile },
+            {},
+            { upsert: true, new: true }
+            );
+        
+        const {accessToken,refreshToken}= await generateAccessAndRefreshToken(mobile)
+        return res.status(200).json(new ApiResponse(200,{accessToken:accessToken,refreshToken:refreshToken},"Tokens fetched successfully"))
+        
+        
+        
+    } catch (error) {
+        return res.status(500).json(new ApiResponse(500,{},"Error while generating Tokens"))
+    }
+
+});
 
 
 

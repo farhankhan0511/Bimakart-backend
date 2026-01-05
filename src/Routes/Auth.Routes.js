@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkMobileExist, SignupUser,VerifyPassword } from "../Controllers/Auth.Controller.js";
+import { checkMobileExist, getUserTokens, refreshAccessToken, SignupUser,VerifyPassword } from "../Controllers/Auth.Controller.js";
 
 
 const router=Router()
@@ -108,6 +108,10 @@ router.post("/signup", SignupUser);
  *         description: Internal server error
  */
 router.post("/login", VerifyPassword);
+
+router.post("/refreshaccesstoken",refreshAccessToken)
+
+router.get("/getuserTokens",getUserTokens)
 
 
 export default router;

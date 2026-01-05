@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { Preapprovalcheck } from "../Controllers/Payment.Controller.js";
+import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
 const router=Router()
 
@@ -78,7 +79,7 @@ const router=Router()
  *       500:
  *         description: Internal server error
  */
-router.post("/preapprovalcheck", Preapprovalcheck);
+router.post("/preapprovalcheck", verifyJWT, Preapprovalcheck);
 
 
 export default router;

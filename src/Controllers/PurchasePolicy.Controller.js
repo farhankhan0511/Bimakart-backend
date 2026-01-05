@@ -1,7 +1,8 @@
 import axios from "axios";
 import { asynchandler } from "../Utils/asynchandler.js";
 import { HealthInsuranceSchema, MotorPolicySchema, RudrakshSchema } from "../Utils/zodschemas.js";
-import { ApiResponse } from "../Utils/ApiResponse.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { success } from "zod";
 
 
 export const BuyMotorPolicy= asynchandler(async (req, res) => {
@@ -40,7 +41,7 @@ export const BuyMotorPolicy= asynchandler(async (req, res) => {
     if (response.status !== 200) {
         return res.status(502).json(new ApiResponse(false, "Failed to process the policy purchase", null));
     }
-         return res.status(200).send(response.data)
+        return res.status(200).json(new ApiResponse(200,{success:true},"Your data has been sent successfully "))
 
 
     } catch (error) {
@@ -89,7 +90,7 @@ export const BuyHealthPolicy= asynchandler(async (req, res) => {
         if (response.status !== 200) {
             return res.status(502).json(new ApiResponse(false, "Failed to process the policy purchase", null));
         }
-           return res.status(200).send(response.data)
+           return res.status(200).json(new ApiResponse(200,{success:true},"Your data has been sent successfully "))
       } catch (error) {
         return res.status(500).json(new ApiResponse(false, "Server Error", null));
       }
@@ -149,7 +150,7 @@ export const BuyRudrakshPolicy= asynchandler(async (req, res) => {
       if (response.status !== 200) {
           return res.status(502).json(new ApiResponse(false, "Failed to process the policy purchase", null));
       }
-           return res.status(200).send(response.data)
+           return res.status(200).json(new ApiResponse(200,{success:true},"Your data has been sent successfully "))
       } catch (error) {
         return res.status(500).json(new ApiResponse(false, "Server Error", null));
       }
