@@ -1,7 +1,7 @@
 import { time } from "console";
 import bimapi from "../Lib/AxiosClient.js";
 import { UserPolicies } from "../Models/UseerPolicies.Model.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
 import os from "os";
 import fs from "fs";

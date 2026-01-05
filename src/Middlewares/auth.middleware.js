@@ -1,6 +1,6 @@
 
 import jwt from "jsonwebtoken"
-import {ApiResponse} from "../utils/ApiResponse.js"
+import {ApiResponse} from "../Utils/ApiResponse.js"
 import { authtokens } from "../Models/Auth.Model.js"
 import { asynchandler } from "../Utils/asynchandler.js";
 

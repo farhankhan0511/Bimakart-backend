@@ -1,7 +1,7 @@
 import axios from "axios";
 import { asynchandler } from "../Utils/asynchandler.js";
 import { HealthInsuranceSchema, MotorPolicySchema, RudrakshSchema } from "../Utils/zodschemas.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../Utils/ApiResponse.js";
 import { success } from "zod";
 
 

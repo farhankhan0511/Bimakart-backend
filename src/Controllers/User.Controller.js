@@ -1,5 +1,5 @@
 import bimapi from "../Lib/AxiosClient.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
 import { checkMobileExistsSchema, updatesSchema } from "../Utils/zodschemas.js";
 
