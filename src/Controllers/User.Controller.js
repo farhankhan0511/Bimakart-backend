@@ -3,6 +3,29 @@ import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
 import { checkMobileExistsSchema, updatesSchema } from "../Utils/zodschemas.js";
 
+
+function calculateProfileCompletion(profile, fields) {
+  let filledCount = 0;
+
+  fields.forEach((field) => {
+    const value = profile[field];
+
+    if (
+      value !== null &&
+      value !== undefined &&
+      value !== "" &&
+      !(Array.isArray(value) && value.length === 0)
+    ) {
+      filledCount++;
+    }
+  });
+
+  const percentage = Math.round((filledCount / fields.length) * 100);
+
+  return percentage;
+}
+
+
 // This is an api to get user details from salesforce
 export const getUserDetails=asynchandler(async(req,res,next)=>{
     try {
@@ -18,6 +41,8 @@ export const getUserDetails=asynchandler(async(req,res,next)=>{
         if (!result.found) {
             return res.status(404).json(new ApiResponse(404,{},"User not found"));
         }
+        result.data.profilecompletionpercentage=calculateProfileCompletion(result.data,Object.keys(result.data))
+        
         return res.status(200).json(new ApiResponse(200,result,"User details retrieved successfully"));
     } catch (error) {
         return res.status(500).json(new ApiResponse(500,{},error.message || "Internal server error"));

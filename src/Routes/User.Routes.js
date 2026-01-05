@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getUserDetails, updateUserDetails } from "../Controllers/User.Controller.js";
-import { getUserPolicies } from "../Controllers/Policy.Controller.js";
+import { getUserPolicies, UploadPolicy } from "../Controllers/Policy.Controller.js";
+import { upload } from "../Middlewares/upload.middleware.js";
 
 
 const router=Router()
@@ -237,6 +238,10 @@ router.post("/updateUserDetails", updateUserDetails);
 
 
 router.post("/policydata", getUserPolicies);
+
+
+
+router.post("/uploadpolicy",upload.single("newpolicy"),UploadPolicy)
 
 
 

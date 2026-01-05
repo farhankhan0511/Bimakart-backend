@@ -80,7 +80,7 @@ export const VerifyPassword=asynchandler(async(req,res,next)=>{
         if(response.data.valid){
             return res.status(200).json(new ApiResponse(200,response.data,"Password verification successful"));
         }
-        return res.status(401).json(new ApiResponse(400,{},"Invalid mobile number or Wrong password"));
+        return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number or Wrong password"));
         
     } catch (error) {
         return res.status(500).json(new ApiResponse(500,{},"Internal server error"));

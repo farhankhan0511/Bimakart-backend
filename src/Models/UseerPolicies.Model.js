@@ -12,8 +12,9 @@ const UserPoliciesSchema = new mongoose.Schema(
         index: true,
         trim: true,
     },
+    uploadedpolicy:{type:[Object],default:[]},
     policies: {
-   type: mongoose.Schema.Types.Mixed,
+   type: [Object],
   default: [],
 },
 processing: {

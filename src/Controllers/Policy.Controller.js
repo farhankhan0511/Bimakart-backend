@@ -12,6 +12,8 @@ import { withRetry } from "../Utils/Retry.js";
 import { checkMobileExistsSchema } from "../Utils/zodschemas.js";
 import FormData from "form-data";
 import pLimit from "p-limit";
+import { uploadPdfToS3 } from "../Utils/FileUpload.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -19,8 +21,6 @@ const DOWNLOAD_DIR = path.join(__dirname, "../downloads");
 if (!fs.existsSync(DOWNLOAD_DIR)) {
   fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
 }
-
-
 const MAX_GLOBAL_DOWNLOADS = Math.max(2, os.cpus().length);
 const globalDownloadLimit = pLimit(MAX_GLOBAL_DOWNLOADS);
 
@@ -278,7 +278,7 @@ export async function extractPolicyDetailsFromFile(filePath) {
 
 
 
-export const getUserPolicies=asynchandler(async(req,res,next)=>{
+export const getUserPolicies=asynchandler(async(req,res)=>{
     const {mobile,refresh}=req.body;
     let savedFiles = [];
     try {
@@ -380,3 +380,63 @@ export const getUserPolicies=asynchandler(async(req,res,next)=>{
     }
 
 });
+
+export const UploadPolicy=asynchandler(async(req,res,)=>{
+  const Policypath=req.file?.path;
+  console.log(req.file)
+  const {mobile}=req.body;
+  try {
+   
+    if(!checkMobileExistsSchema.safeParse({mobile}).success){
+      return res.status(400).json(new ApiResponse(400,{},"Invalid mobile format"))
+    }
+    if(!Policypath){
+      return res.status(404).json(new ApiResponse(404,{},"Policy not found"))
+    }
+
+    const newPolicy= await uploadPdfToS3(Policypath,req.file?.filename); 
+
+
+    if(!newPolicy ){
+      return res.status(500).json(new ApiResponse(500,{},"Error while uploading the Policy"));
+    }
+     const extractedPolicy=await extractPolicyDetailsFromFile(Policypath)
+     extractedPolicy.url=newPolicy;
+    if (!extractedPolicy){
+      return res.status(500).json(new ApiResponse(500,{},"Error while extracting the policy"))
+    }
+    const existingRecord=await UserPolicies.findOne({mobile})
+
+    if(existingRecord){
+    const updatedPolicy= await UserPolicies.findOneAndUpdate({ mobile ,"uploadedpolicy.id": { $ne: extractedPolicy.id }},
+            {
+                $push: {
+                    uploadedpolicy: extractedPolicy                 
+                }
+            },
+           { returnDocument: "after" }
+        ); 
+      
+      if(updatedPolicy === null){
+        return res.status(400).json(new ApiResponse(400,{},"Policy already Exists"))
+      }
+        return res.status(200).json(new ApiResponse(200,{updatedPolicy},"Policy added successfully")) 
+      }
+    else{
+      const newRecord= await UserPolicies.create({mobile,uploadedpolicy:extractedPolicy})
+      return res.status(200).json(new ApiResponse(200,newRecord,"Policy added successfully"))
+    }
+      
+
+    
+  } catch (error) {
+    res.status(500).json(new ApiResponse(500,{},"Internal Server Error"))
+  }
+  finally{
+    if(fs.existsSync(Policypath)){
+
+      fs.unlinkSync(Policypath)
+    }
+  }
+
+})
