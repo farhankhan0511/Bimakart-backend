@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 
 const connectDB = async () => {
+  console.log("MONGODB_URI before Mongo connect:", process.env.MONGODB_URI);
+
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {

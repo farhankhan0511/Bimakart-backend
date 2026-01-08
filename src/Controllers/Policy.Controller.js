@@ -12,7 +12,7 @@ import { withRetry } from "../Utils/Retry.js";
 import { checkMobileExistsSchema } from "../Utils/zodschemas.js";
 import FormData from "form-data";
 import pLimit from "p-limit";
-import { uploadPdfToS3 } from "../Utils/FileUpload.js";
+import { deletePdfFromS3ByUrl, uploadPdfToS3 } from "../Utils/FileUpload.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +23,21 @@ if (!fs.existsSync(DOWNLOAD_DIR)) {
 }
 const MAX_GLOBAL_DOWNLOADS = Math.max(2, os.cpus().length);
 const globalDownloadLimit = pLimit(MAX_GLOBAL_DOWNLOADS);
+
+
+const POLICY_KEYS = [
+  "motorInsurancePolicy",
+  "lifeInsurancePolicy",
+  "healthInsurancePolicy",
+  "membershipBenefits",
+];
+
+const getPlanFromPremium = (grossPremium) => {
+  if (grossPremium === 130) return "Gold";
+  if (grossPremium === 5) return "Silver";
+  return null;
+};
+
 
 export async function downloadPDF(url, filePath) {
   return globalDownloadLimit(() =>
@@ -332,6 +347,19 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                 console.log(`Extracted policy details from file ${filePath}:`, policyDetails);
                 if (policyDetails) {
                     policyDetails.source = filePath.endsWith(".txt") ? "basecode" : "url";
+                   if (policyDetails?.source === "url") {
+                        for (const key of POLICY_KEYS) {
+                          const policy = policyDetails?.[key];
+                          if (!policy) continue;
+
+                          const plan = getPlanFromPremium(policy.grossPremium);
+                          if (plan) {
+                            policyDetails.plan = plan;
+                            break;  
+                          }
+                        }
+                      }
+
                    
                     allPolicies.push(policyDetails);
                 }
@@ -418,6 +446,8 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
         ); 
       
       if(updatedPolicy === null){
+        await deletePdfFromS3ByUrl(newPolicy);
+        
         return res.status(400).json(new ApiResponse(400,{},"Policy already Exists"))
       }
         return res.status(200).json(new ApiResponse(200,{updatedPolicy},"Policy added successfully")) 
@@ -434,7 +464,6 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
   }
   finally{
     if(fs.existsSync(Policypath)){
-
       fs.unlinkSync(Policypath)
     }
   }

@@ -4,7 +4,10 @@ import { checkMobileExistsSchema, signupSchema } from "../Utils/zodschemas.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { authtokens } from "../Models/Auth.Model.js";
 import jwt from "jsonwebtoken"
+import admin from "../Utils/firebase.js";
 
+
+const normalize = (num) => num?.toString().replace(/\D/g, "").slice(-10);
 
 
 // just an helper fuction to check mobile exist or not #currently not used anywhere
@@ -157,16 +160,21 @@ export const refreshAccessToken = asynchandler(async (req, res) => {
 
   // this will be used by users who sign in using otp
 export const getUserTokens =asynchandler(async(req,res) =>{
-    const {mobile}=req.body;
+    const {mobile,token}=req.body;
     try {
         if (!mobile) {
             return res.status(400).json(new ApiResponse(400,{},"Mobile number is required"));
-        }
-        if(!checkMobileExistsSchema.safeParse({mobile}).success){
-            return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number format"));
+        } 
+        if (!token) {
+            return res.status(400).json(new ApiResponse(400,{},"Token is required"));
+        }          
+        const decoded = await admin.auth().verifyIdToken(token);
+        console.log(decoded)
+        if (normalize(decoded.phone_number) != normalize(mobile)){
+            return res.status(400).json(new ApiResponse(400,{},"Invalid Token"))
         }
         await authtokens.findOneAndUpdate(
-            { mobile },
+            { mobile:mobile },
             {},
             { upsert: true, new: true }
             );
@@ -177,7 +185,7 @@ export const getUserTokens =asynchandler(async(req,res) =>{
         
         
     } catch (error) {
-        return res.status(500).json(new ApiResponse(500,{},"Error while generating Tokens"))
+        return res.status(500).json(new ApiResponse(500,{},error.message || "Error while generating Tokens"))
     }
 
 });

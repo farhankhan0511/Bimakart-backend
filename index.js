@@ -3,7 +3,7 @@ import app from "./src/app.js";
 import { connectDB } from './src/Db/Db.js';
 import { fetchNewToken} from './src/Lib/TokenManager.js';
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 async function bootstrap() {
   try {
