@@ -17,11 +17,31 @@ const UserPoliciesSchema = new mongoose.Schema(
    type: [Object],
   default: [],
 },
+<<<<<<< HEAD
 processing: {
     inProgress: { type: Boolean, default: false },
 
   },
   },
+=======
+   processing: {
+    inProgress: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    startedAt: {
+      type: Date,
+      index: true, // needed for TTL logic
+    },
+    lockId:{
+      type:String
+    }
+  },
+
+  },
+ 
+>>>>>>> 8085e14 (added logging and removed locking bug)
   
   { timestamps: true }
 )
