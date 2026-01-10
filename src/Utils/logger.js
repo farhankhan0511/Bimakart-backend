@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -35,3 +36,17 @@ export function logAction(id, name ) {
   };
   fs.appendFileSync(logFilePath, JSON.stringify(entry) + "\n", "utf8");
 }
+=======
+import pino from "pino";
+
+const logger = pino({
+  level:  "info",
+  transport:{
+          target: "pino-pretty",
+          options: { colorize: true }
+        }
+      
+});
+
+export default logger;
+>>>>>>> 8085e14 (added logging and removed locking bug)
