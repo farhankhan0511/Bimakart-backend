@@ -19,15 +19,16 @@ export const verifyJWT = asynchandler(async (req, res, next) => {
     if (!auth) {
       return res.status(401).json(new ApiResponse(401, {}, "Invalid token"));
     }
-
-    req.auth = {
-      _id: decoded._id,
-      mobile: decoded.mobile,
-    };
-
+   
+    req.decodedmobile=decoded.mobile;
     next();
   } catch (err) {
-    return res.status(401).json(new ApiResponse(401, {}, "Token expired or invalid"));
+    if (err.name === "TokenExpiredError") {
+      return res
+        .status(422)
+        .json(new ApiResponse(422, {}, "Token expired"));
+    }
+    return res.status(401).json(new ApiResponse(401, {}, "Token invalid"));
   }
 });
 

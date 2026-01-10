@@ -295,6 +295,7 @@ export async function extractPolicyDetailsFromFile(filePath) {
 
 export const getUserPolicies=asynchandler(async(req,res)=>{
     const {mobile,refresh}=req.body;
+    
     let savedFiles = [];
     try {
         if (!mobile) {
@@ -334,9 +335,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         const basecodeFiles = await getPoliciesfrombasecodeApi(mobile);
         console.log("Files downloaded from Basecode API:", basecodeFiles);
         savedFiles = savedFiles.concat(basecodeFiles);
-        if(savedFiles.length===0){
-            return res.status(404).json(new ApiResponse(404,{},"No policies found for this mobile number"));
-        }
+        
 
         // Now running the ocr service on each file to extract policy details
         const allPolicies = [];
@@ -387,6 +386,9 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         return res.status(200).json(new ApiResponse(200,{source:"api",data:newlyUpdatedRecord},"User policies retrieved successfully from API"));
         }
         else {
+          if(savedFiles.length===0){
+            return res.status(404).json(new ApiResponse(404,{},"No policies found for this mobile number"));
+        }
          const newlyCreatedRecord =await UserPolicies.create({
             mobile,
             policies: allPolicies,

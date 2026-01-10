@@ -17,7 +17,7 @@ export const BuyMotorPolicy= asynchandler(async (req, res) => {
           }
 
            const params = new URLSearchParams();
-            params.append("retURL", process.env.reURL || "");
+            params.append("retURL", process.env.retURL || "");
             params.append("oid", process.env.OID || "");
             params.append("lead_source", "Digital Medium");
             params.append("source", "App");
@@ -68,7 +68,7 @@ export const BuyHealthPolicy= asynchandler(async (req, res) => {
 
   const params = new URLSearchParams();
     params.append("oid", process.env.OID || "");
-    params.append("retURL", process.env.reURL);
+    params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
     params.append("source", "App");
     params.append("Policy", "Application - Health Insurance");
@@ -121,7 +121,7 @@ export const BuyRudrakshPolicy= asynchandler(async (req, res) => {
   
     // Required Salesforce fields
     params.append("oid", process.env.OID || "");
-    params.append("retURL", process.env.reURL);
+    params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
     params.append("Policy", "Application - Rudraksh Insurance");
     params.append("source", "App");
