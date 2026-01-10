@@ -169,11 +169,7 @@ export const getUserTokens =asynchandler(async(req,res) =>{
             return res.status(400).json(new ApiResponse(400,{},"Token is required"));
         }          
         const decoded = await admin.auth().verifyIdToken(token);
-<<<<<<< HEAD
-        console.log(decoded)
-=======
-        
->>>>>>> 8085e14 (added logging and removed locking bug)
+
         if (normalize(decoded.phone_number) != normalize(mobile)){
             return res.status(400).json(new ApiResponse(400,{},"Invalid Token"))
         }

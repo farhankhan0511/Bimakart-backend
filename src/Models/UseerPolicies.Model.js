@@ -17,13 +17,7 @@ const UserPoliciesSchema = new mongoose.Schema(
    type: [Object],
   default: [],
 },
-<<<<<<< HEAD
-processing: {
-    inProgress: { type: Boolean, default: false },
 
-  },
-  },
-=======
    processing: {
     inProgress: {
       type: Boolean,
@@ -41,7 +35,6 @@ processing: {
 
   },
  
->>>>>>> 8085e14 (added logging and removed locking bug)
   
   { timestamps: true }
 )

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { time } from "console";
-=======
 
->>>>>>> 8085e14 (added logging and removed locking bug)
 import bimapi from "../Lib/AxiosClient.js";
 import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
@@ -17,14 +13,13 @@ import { checkMobileExistsSchema } from "../Utils/zodschemas.js";
 import FormData from "form-data";
 import pLimit from "p-limit";
 import { deletePdfFromS3ByUrl, uploadPdfToS3 } from "../Utils/FileUpload.js";
-<<<<<<< HEAD
-=======
+
 import mongoose from "mongoose";
 import logger from "../Utils/logger.js";
 
 const LOCK_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
->>>>>>> 8085e14 (added logging and removed locking bug)
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -114,11 +109,7 @@ export async function downloadPDF(url, filePath) {
             throw new Error("Downloaded file is empty");
           }
 
-<<<<<<< HEAD
-          console.log(`✓ Downloaded: ${path.basename(filePath)} (${stats.size} bytes)`);
-=======
-       
->>>>>>> 8085e14 (added logging and removed locking bug)
+
           return filePath;
           
         } catch (err) {
@@ -127,11 +118,9 @@ export async function downloadPDF(url, filePath) {
             try {
               await fs.promises.unlink(filePath);
             } catch (unlinkErr) {
-<<<<<<< HEAD
-              console.error(`Failed to cleanup partial file ${filePath}:`, unlinkErr.message);
-=======
+
               logger.error(unlinkErr,`Failed to cleanup partial file ${filePath}:`);
->>>>>>> 8085e14 (added logging and removed locking bug)
+
             }
           }
 
@@ -158,19 +147,13 @@ export async function downloadPDF(url, filePath) {
 // Improved parallel download with better error handling
 export async function downloadPDFs(urls, downloadDir) {
   if (!urls || urls.length === 0) {
-<<<<<<< HEAD
-    console.log("No URLs to download");
-    return [];
-  }
 
-  console.log(`Starting download of ${urls.length} files...`);
-=======
     logger.warn("No URLs to download");
     return [];
   }
 
   
->>>>>>> 8085e14 (added logging and removed locking bug)
+
   
   const tasks = urls.map((url, index) => {
     const fileName = `file_${index + 1}.pdf`;
@@ -178,11 +161,9 @@ export async function downloadPDFs(urls, downloadDir) {
     
     return downloadPDF(url, filePath)
       .catch(err => {
-<<<<<<< HEAD
-        console.error(`Failed to download ${url}:`, err.message);
-=======
+
         logger.error(err`Failed to download ${url}:`,);
->>>>>>> 8085e14 (added logging and removed locking bug)
+
         return null; // Return null instead of failing entire batch
       });
   });
@@ -192,12 +173,9 @@ export async function downloadPDFs(urls, downloadDir) {
   // Filter out failed downloads (null values)
   const successfulDownloads = results.filter(Boolean);
   
-<<<<<<< HEAD
-  console.log(`Downloaded ${successfulDownloads.length}/${urls.length} files successfully`);
-=======
+
   logger.info(`Downloaded ${successfulDownloads.length}/${urls.length} files successfully`);
->>>>>>> 8085e14 (added logging and removed locking bug)
-  
+
   return successfulDownloads;
 }
 
@@ -217,32 +195,7 @@ export async function cleanupFiles(filePaths = []) {
 
 // this are helper functions for locking and making this process non-redundant and safer
 async function acquireLock(mobile) {
-<<<<<<< HEAD
-  const result = await UserPolicies.findOneAndUpdate(
-    {
-      mobile,
-      "processing.inProgress": { $ne: true }
-    },
-    {
-      $set: {
-        "processing.inProgress": true,
-        "processing.startedAt": new Date(),
-      }
-    },
-    { upsert: true, new: true }
-  );
 
-  return result?.processing?.inProgress === true;
-}
-
-async function releaseLock(mobile, error = null) {
-  await UserPolicies.updateOne(
-    { mobile },
-    {
-      $set: {
-        "processing.inProgress": false,
-        
-=======
   const now = new Date();
   const staleTime = new Date(now.getTime() - LOCK_TIMEOUT_MS);
   const lockId = new mongoose.Types.ObjectId().toString();
@@ -310,16 +263,13 @@ async function releaseLock(mobile, lockId) {
         "processing.inProgress": false,
         "processing.startedAt": null,
         "processing.lockId": null
->>>>>>> 8085e14 (added logging and removed locking bug)
+
       }
     }
   );
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 8085e14 (added logging and removed locking bug)
 async function getPoliciesfromURLApi(mobile){
     if(!mobile) throw new Error("Mobile number is required");
 
@@ -329,15 +279,7 @@ async function getPoliciesfromURLApi(mobile){
       const validUrls = policies
     .map(p => p.downloadUrl)
     .filter(Boolean);
-<<<<<<< HEAD
-    console.log("Valid URLs:", validUrls);
-  
 
-    const downloadedFiles = await downloadPDFs(validUrls, DOWNLOAD_DIR);
-    console.log("Downloaded Files from URL API:", downloadedFiles); 
-    const savedFiles = downloadedFiles.map(filePath => path.relative(process.cwd(), filePath));
-    console.log("Downloaded Files:", savedFiles);
-=======
     
   
 
@@ -345,7 +287,7 @@ async function getPoliciesfromURLApi(mobile){
 
     const savedFiles = downloadedFiles.map(filePath => path.relative(process.cwd(), filePath));
     
->>>>>>> 8085e14 (added logging and removed locking bug)
+
     return savedFiles;
     
 }
@@ -415,11 +357,9 @@ export async function extractPolicyDetailsFromFile(filePath) {
 
 export const getUserPolicies=asynchandler(async(req,res)=>{
     const {mobile,refresh}=req.body;
-<<<<<<< HEAD
-    
-=======
+
     let lockInfo = { acquired: false, lockId: null };
->>>>>>> 8085e14 (added logging and removed locking bug)
+
     let savedFiles = [];
     try {
         if (!mobile) {
@@ -431,36 +371,6 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         if (typeof refresh !== "boolean") {
             return res.status(400).json(new ApiResponse(400,{},"Refresh must be a boolean"));
         }
-<<<<<<< HEAD
-        const existingRecord=await UserPolicies.findOne({mobile});
-        console.log("here")
-        if (existingRecord && existingRecord?.policies?.length > 0 && !refresh) {
-            return res.status(200).json(new ApiResponse(200,{source:"cache",data:existingRecord},"User policies retrieved successfully from cache"));
-        }
-        console.log("No cached record or refresh requested, proceeding to fetch policies from APIs");
-        if (existingRecord && existingRecord?.processing?.inProgress) {
-            return res.status(409).json(new ApiResponse(409,{},"Policy retrieval already in progress for this mobile number"));
-        }
-        console.log("No ongoing processing, attempting to acquire lock");
-        let lockAcquired;
-        if (existingRecord) {
-        lockAcquired = await acquireLock(mobile);
-        } else {
-        lockAcquired = true;
-        }
-        if (!lockAcquired) {
-            return res.status(409).json(new ApiResponse(409,{},"Policy retrieval already in progress for this mobile number"));
-        }
-        console.log("Lock acquired for mobile:", mobile);
-        // As now that the lock is acquired it means no redundant process and hence safe to start
-        // firstly getting policies from api which gives uls
-        savedFiles = await getPoliciesfromURLApi(mobile);
-        console.log("Files downloaded from URL API:", savedFiles);
-        // now getting policies from basecode api
-        const basecodeFiles = await getPoliciesfrombasecodeApi(mobile);
-        console.log("Files downloaded from Basecode API:", basecodeFiles);
-=======
-        
         
         lockInfo = await acquireLock(mobile);
         if (!lockInfo.acquired) {
@@ -483,7 +393,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         // now getting policies from basecode api
         const basecodeFiles = await getPoliciesfrombasecodeApi(mobile);
         
->>>>>>> 8085e14 (added logging and removed locking bug)
+
         savedFiles = savedFiles.concat(basecodeFiles);
         
 
@@ -493,11 +403,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
             try {
                 
                 const policyDetails = await extractPolicyDetailsFromFile(filePath);
-<<<<<<< HEAD
-                console.log(`Extracted policy details from file ${filePath}:`, policyDetails);
-=======
-                
->>>>>>> 8085e14 (added logging and removed locking bug)
+
                 if (policyDetails) {
                     policyDetails.source = filePath.endsWith(".txt") ? "basecode" : "url";
                    if (policyDetails?.source === "url") {
@@ -508,11 +414,10 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                           const plan = getPlanFromPremium(policy.grossPremium);
                           if (plan) {
                             policyDetails.plan = plan;
-<<<<<<< HEAD
-=======
+
                             policyDetails.planStartDate=policyDetails?.[key].policyStartDate
                             policyDetails.planEndDate=policyDetails?.[key].policyEndDate
->>>>>>> 8085e14 (added logging and removed locking bug)
+
                             break;  
                           }
                         }
@@ -522,11 +427,9 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                     allPolicies.push(policyDetails);
                 }
             } catch (err) {
-<<<<<<< HEAD
-                console.error(`Error extracting policy from file ${filePath}:`, err.message);
-=======
+
                 logger.error(`Error extracting policy from file ${filePath}:`, err.message);
->>>>>>> 8085e14 (added logging and removed locking bug)
+
             }
         }
        
@@ -540,10 +443,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
             {
                 $set: {
                     policies: allPolicies,
-<<<<<<< HEAD
-                    "processing.inProgress": false,
-=======
->>>>>>> 8085e14 (added logging and removed locking bug)
+
                 }
             },
            { returnDocument: "after" }
@@ -570,14 +470,11 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         return res.status(500).json(new ApiResponse(500,{},error.message || "Internal server error"));
     }
     finally {
-<<<<<<< HEAD
-       await releaseLock(mobile);
-=======
+
       // release locks and cleanfiles 
       if (lockInfo.acquired) {
       await releaseLock(mobile, lockInfo.lockId);
     }
->>>>>>> 8085e14 (added logging and removed locking bug)
     await cleanupFiles(savedFiles);
 
     }
@@ -586,10 +483,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
 
 export const UploadPolicy=asynchandler(async(req,res,)=>{
   const Policypath=req.file?.path;
-<<<<<<< HEAD
-  console.log(req.file)
-=======
->>>>>>> 8085e14 (added logging and removed locking bug)
+
   const {mobile}=req.body;
   try {
    

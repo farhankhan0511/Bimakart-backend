@@ -22,11 +22,9 @@ export async function withRetry(fn, options = {}) {
       }
 
       const wait = delay * Math.pow(backoff, attempt - 1);
-<<<<<<< HEAD
-      console.warn(`[${label}] retry ${attempt}/${retries} in ${wait}ms`);
-=======
+
       logger.warn(`[${label}] retry ${attempt}/${retries} in ${wait}ms`);
->>>>>>> 8085e14 (added logging and removed locking bug)
+
       await new Promise(res => setTimeout(res, wait));
     }
   }

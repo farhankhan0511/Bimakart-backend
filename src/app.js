@@ -4,10 +4,8 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger.js";
-<<<<<<< HEAD
-=======
+
 import logger from "../src/Utils/logger.js"
->>>>>>> 8085e14 (added logging and removed locking bug)
 
 
 const apiLimiter = rateLimit({
@@ -28,12 +26,7 @@ app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ limit: "16kb", extended: true }));
 
 
-<<<<<<< HEAD
-app.set("trust proxy", true);
-//temporary for swagger hai
-=======
 
->>>>>>> 8085e14 (added logging and removed locking bug)
 
 import AuthRoutes from "./Routes/Auth.Routes.js";
 import UserRoutes from "./Routes/User.Routes.js";
@@ -41,8 +34,7 @@ import PaymentRoutes from "./Routes/Payment.Routes.js";
 import PurchaseRoutes from "./Routes/Purchase.Routes.js";
 import MarketRoutes from "./Routes/Market.Routes.js"
 import PolicyhawaldarRoutes from "./Routes/PolicyHawaldar.Routes.js"
-<<<<<<< HEAD
-=======
+
 import { pinoHttp } from "pino-http";
 
 app.use(pinoHttp({ logger }));
@@ -58,7 +50,7 @@ app.use((err, req, res, next) => {
 
   res.status(500).json({ message: "Internal Server Error" });
 });
->>>>>>> 8085e14 (added logging and removed locking bug)
+
 
 
 app.use("/api/auth", AuthRoutes);

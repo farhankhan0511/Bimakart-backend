@@ -63,11 +63,7 @@ export const updateUserDetails=asynchandler(async(req,res,next)=>{
             return res.status(400).json(new ApiResponse(400,{},"Invalid updates format"));
         }
         const response=await bimapi.post("/updateUserRecord",{currentMobile:currentMobile,updates});   
-<<<<<<< HEAD
-        console.log(response) 
-=======
-        
->>>>>>> 8085e14 (added logging and removed locking bug)
+
 
         return res.status(200).json(new ApiResponse(200,response.data,"Operation completed successfully"));
     } catch (error) {
