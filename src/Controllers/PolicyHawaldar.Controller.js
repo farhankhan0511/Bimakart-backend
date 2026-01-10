@@ -23,7 +23,11 @@ const response = await axios.post(
   }
 );
 
+<<<<<<< HEAD
         console.log(response)
+=======
+        
+>>>>>>> 8085e14 (added logging and removed locking bug)
         if(response.status!==200){
             res.status(500).json(new ApiResponse(500,{},"Error getting response"))
         }
