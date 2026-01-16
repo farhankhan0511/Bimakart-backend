@@ -175,13 +175,19 @@ export const HealthInsuranceSchema = z.object({
     .string()
     .min(2, "First name too short")
     .max(40),
-
-  lastName: z
+    
+    lastName: z
     .string()
     .min(2, "Last name too short")
     .max(80),
-
-  insureFor: z.enum([
+    
+    email: z
+      .email("Invalid email address"),
+  
+    mobile: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
+    insureFor: z.enum([
     "Self",
     "Spouse",
     "Son",
@@ -190,12 +196,6 @@ export const HealthInsuranceSchema = z.object({
     "Mother",
   ]),
 
-  email: z
-    .email("Invalid email address"),
-
-  mobile: z
-    .string()
-    .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
 
   whatsappNumber: z
     .string()
@@ -209,3 +209,54 @@ export const HealthInsuranceSchema = z.object({
 });
 
 
+
+
+export const PlanSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, "First name too short")
+    .max(40),
+    
+    lastName: z
+    .string()
+    .min(2, "Last name too short")
+    .max(80),
+    
+    email: z
+      .email("Invalid email address"),
+  
+    mobile: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
+    plan: z.enum([
+    "Gold",
+    "Silver",
+  ]),
+});
+
+export const ReferandEarnSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, "Full name too short")
+    .max(100, "Full name too long"),
+  
+    contactNumber: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
+
+    relationship: z.enum([
+      "Friend",
+      "Family",
+      "Neighbour",
+      "Colleague",
+      "Other"
+    ]),
+    insuranceType: z.enum([
+      "Health",
+      "Motor",
+      "Life",
+      "Rudraksh",
+      "Rasgulla",
+      "Helmet Theft"
+    ]),
+});
