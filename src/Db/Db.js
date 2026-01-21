@@ -20,7 +20,7 @@ const connectDB = async () => {
    await UserPolicies.updateMany(
     {
       "processing.inProgress": true,
-      "processing.startedAt": { $lt: staleTime }
+     
     },
     {
       $set: {
@@ -34,7 +34,7 @@ const connectDB = async () => {
    
     logger.info(`MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
-    logger.error(error,"MongoDB connection failed");
+    logger.error("MongoDB connection failed", error);
     
 
     process.exit(1);

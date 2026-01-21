@@ -13,7 +13,6 @@ import { checkMobileExistsSchema } from "../Utils/zodschemas.js";
 import FormData from "form-data";
 import pLimit from "p-limit";
 import { deletePdfFromS3ByUrl, uploadPdfToS3 } from "../Utils/FileUpload.js";
-
 import mongoose from "mongoose";
 import logger from "../Utils/logger.js";
 
@@ -37,12 +36,13 @@ const POLICY_KEYS = [
   "lifeInsurancePolicy",
   "healthInsurancePolicy",
   "membershipBenefits",
+  "personalAccidentPolicy",
 ];
 
 const getPlanFromPremium = (grossPremium) => {
   if (grossPremium === 130) return "Gold";
   if (grossPremium === 5) return "Silver";
-  return null;
+  return "NA";
 };
 
 
@@ -162,7 +162,7 @@ export async function downloadPDFs(urls, downloadDir) {
     return downloadPDF(url, filePath)
       .catch(err => {
 
-        logger.error(err`Failed to download ${url}:`,);
+        logger.error(`Failed to download ${url}:`, err);
 
         return null; // Return null instead of failing entire batch
       });
@@ -244,7 +244,7 @@ async function acquireLock(mobile) {
     return { acquired: false, lockId: null };
 
   } catch (err) {
-    logger.error(err,"Lock acquisition error:");
+    logger.error("Lock acquisition error:", err);
     return { acquired: false, lockId: null };
   }
 
@@ -316,6 +316,35 @@ async function getPoliciesfrombasecodeApi(mobile){
   return savedFiles;
 }
 
+// policy hawaldar function
+const getpolicyanalysis=async(Policypath)=>{
+    if (!Policypath) throw new Error("File path is required");
+
+    const absolutePath = path.isAbsolute(Policypath)
+      ? Policypath
+      : path.join(process.cwd(), Policypath);
+    if (!fs.existsSync(absolutePath)) {
+      throw new Error("File does not exist");
+    }
+    
+        const form = new FormData();
+        form.append("file", fs.createReadStream(Policypath));
+            const response = await axios.post(
+            `${process.env.PolicyHawaldarURL}/api/v1/conversation`,
+            form,
+            {
+                headers: {
+                ...form.getHeaders(), 
+                },
+            }
+            );
+        return response.data;
+    }
+  
+
+
+
+
 
 export async function extractPolicyDetailsFromFile(filePath) {
   if (!filePath) throw new Error("File path is required");
@@ -385,7 +414,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         }
 
         
-        logger.info("Lock acquired for mobile:", mobile);
+        logger.info({mobile},"Lock acquired for mobile:");
         // As now that the lock is acquired it means no redundant process and hence safe to start
         // firstly getting policies from api which gives uls
         savedFiles = await getPoliciesfromURLApi(mobile);
@@ -401,22 +430,41 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         const allPolicies = [];
         for (const filePath of savedFiles) {
             try {
-                
-                const policyDetails = await extractPolicyDetailsFromFile(filePath);
+                let policyanalysis = null;
+                let policyDetails = null;
+
+                try {
+                  policyanalysis = await getpolicyanalysis(filePath);
+                } catch (e) {
+                  logger.warn(`Policy analysis failed for ${filePath}: ${e.message}`);
+                }
+
+                try {
+                  policyDetails = await extractPolicyDetailsFromFile(filePath);
+                } catch (e) {
+                  logger.warn(`Policy extraction failed for ${filePath}: ${e.message}`);
+                }
 
                 if (policyDetails) {
+                    policyDetails.policyAnalysis=policyanalysis;
                     policyDetails.source = filePath.endsWith(".txt") ? "basecode" : "url";
                    if (policyDetails?.source === "url") {
                         for (const key of POLICY_KEYS) {
                           const policy = policyDetails?.[key];
                           if (!policy) continue;
+                          let plan = null;
+                          if(policy.grossPremium){
+                            plan = getPlanFromPremium(policy.grossPremium);
+                          }
+                          else {
+                            plan = getPlanFromPremium((policy.premiumBreakup?.grossPremium) ? policy.premiumBreakup?.grossPremium : policy.premiumBreakup?.totalPremium);
+                          }
 
-                          const plan = getPlanFromPremium(policy.grossPremium);
-                          if (plan) {
+                           
+                          if (plan) {                            
                             policyDetails.plan = plan;
-
-                            policyDetails.planStartDate=policyDetails?.[key].policyStartDate
-                            policyDetails.planEndDate=policyDetails?.[key].policyEndDate
+                            policyDetails.planStartDate=policy.policyStartDate;
+                            policyDetails.planEndDate=policy.policyEndDate;
 
                             break;  
                           }
@@ -428,7 +476,11 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                 }
             } catch (err) {
 
-                logger.error(`Error extracting policy from file ${filePath}:`, err.message);
+                logger.error(
+                `Error extracting policy from file ${filePath}`,
+                { message: err.message, stack: err.stack }
+              );
+
 
             }
         }
@@ -500,8 +552,26 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
     if(!newPolicy ){
       return res.status(500).json(new ApiResponse(500,{},"Error while uploading the Policy"));
     }
-     const extractedPolicy=await extractPolicyDetailsFromFile(Policypath)
+      
+     
+
+              let policyanalysis = null;
+              let extractedPolicy = null;
+
+                try {
+                  policyanalysis = await getpolicyanalysis(Policypath);
+                } catch (e) {
+                  logger.warn(`Policy analysis failed for ${Policypath}: ${e.message}`);
+                }
+
+                try {
+                  extractedPolicy = await extractPolicyDetailsFromFile(Policypath)
+                } catch (e) {
+                  logger.warn(`Policy extraction failed for ${Policypath}: ${e.message}`);
+                }
+
      extractedPolicy.url=newPolicy;
+     extractedPolicy.policyAnalysis=policyanalysis;
     if (!extractedPolicy){
       return res.status(500).json(new ApiResponse(500,{},"Error while extracting the policy"))
     }
