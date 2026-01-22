@@ -592,16 +592,17 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
         
         return res.status(400).json(new ApiResponse(400,{},"Policy already Exists"))
       }
-        return res.status(200).json(new ApiResponse(200,{updatedPolicy},"Policy added successfully")) 
+        return res.status(200).json(new ApiResponse(200,{extractedPolicy},"Policy added successfully")) 
       }
     else{
-      const newRecord= await UserPolicies.create({mobile,uploadedpolicy:extractedPolicy})
-      return res.status(200).json(new ApiResponse(200,newRecord,"Policy added successfully"))
+      await UserPolicies.create({mobile,uploadedpolicy:extractedPolicy})
+      return res.status(200).json(new ApiResponse(200,extractedPolicy,"Policy added successfully"))
     }
       
 
     
   } catch (error) {
+    logger.error("Error in UploadPolicy:", error);
     res.status(500).json(new ApiResponse(500,{},"Internal Server Error"))
   }
   finally{

@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { getBanners } from "../Controllers/Marketing.controller.js";
+import { getBanners, getTutorialVideos } from "../Controllers/Marketing.controller.js";
 
 const router=Router();
 
-router.get("/banners",getBanners)
+router.get("/banners",getBanners);
+
+router.get("/tutorial-videos",getTutorialVideos);
 
 export default router;
