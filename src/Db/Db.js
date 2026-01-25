@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 
 import logger from "../Utils/logger.js";
+import { FcmToken } from "../Models/FCM.Model.js";
  const staleTime = new Date(Date.now() - (15 * 60 * 1000));
 const connectDB = async () => {
   logger.info("MONGODB_URI before Mongo connect:", process.env.MONGODB_URI);
@@ -15,8 +16,8 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(uri);
     
-    await UserPolicies.syncIndexes();
-
+    await UserPolicies.createIndexes();
+    await FcmToken.createIndexes(); 
    await UserPolicies.updateMany(
     {
       "processing.inProgress": true,
@@ -30,6 +31,7 @@ const connectDB = async () => {
       }
     }
   );
+
 
    
     logger.info(`MongoDB connected: ${conn.connection.host}`);

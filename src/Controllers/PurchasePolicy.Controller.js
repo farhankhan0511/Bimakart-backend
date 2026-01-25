@@ -220,7 +220,7 @@ export const ReferandEarn = asynchandler(async (req, res) => {
     params.append("lead_source", "Digital Medium");
     params.append("source", "App");
     params.append("Policy", "Application - Referral");
-    params.append("refferedBy", req.decodedmobile || "Unknown");
+    params.append("refferedBy", req.mobile || "Unknown");
     params.append("fullName", fullName);
     params.append("contactNumber", contactNumber);
     params.append("relationship", relationship);

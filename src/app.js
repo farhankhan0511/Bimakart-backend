@@ -34,6 +34,8 @@ import PaymentRoutes from "./Routes/Payment.Routes.js";
 import PurchaseRoutes from "./Routes/Purchase.Routes.js";
 import MarketRoutes from "./Routes/Market.Routes.js"
 import PolicyhawaldarRoutes from "./Routes/PolicyHawaldar.Routes.js"
+import FCMRoutes from "./Routes/FCM.Routes.js";
+import AdminAuthRoutes from "./Routes/AdminAuth.Routes.js";
 
 import { pinoHttp } from "pino-http";
 
@@ -60,6 +62,8 @@ app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/marketing",MarketRoutes)
 app.use("/api/policyhawaldar",PolicyhawaldarRoutes)
 app.use("/api/purchase", PurchaseRoutes);
+app.use("/api/fcm",FCMRoutes);
+app.use("/api/admin",AdminAuthRoutes);
 
 export default app;
 

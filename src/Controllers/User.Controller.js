@@ -1,4 +1,5 @@
 import bimapi from "../Lib/AxiosClient.js";
+import { FcmToken } from "../Models/FCM.Model.js";
 import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
@@ -84,7 +85,36 @@ export const updateUserDetails=asynchandler(async(req,res,next)=>{
         if(!updates || !updatesSchema.safeParse(updates).success){
             return res.status(400).json(new ApiResponse(400,{},"Invalid updates format"));
         }
-        const response=await bimapi.post("/updateUserRecord",{currentMobile:currentMobile,updates});   
+        const response=await bimapi.post("/updateUserRecord",{currentMobile:currentMobile,updates}); 
+
+         try {
+            const fcmUpdateData = {};
+            
+            
+            if (updates.state !== undefined) fcmUpdateData.state = updates.state;
+            if (updates.city !== undefined) fcmUpdateData.city = updates.city;
+            if (updates.occupation !== undefined) fcmUpdateData.occupation = updates.occupation;
+            if (updates.interests !== undefined) fcmUpdateData.interests = updates.interests;
+
+            
+            if (Object.keys(fcmUpdateData).length > 0) {
+                const fcmResult = await FcmToken.updateMany(
+                    { mobile: currentMobile },
+                    { $set: fcmUpdateData }
+                );
+
+                logger.info(
+                    `Synced profile data to ${fcmResult.modifiedCount} FCM tokens for mobile: ${currentMobile}`,
+                    { updatedFields: Object.keys(fcmUpdateData) }
+                );
+            }
+        } catch (fcmError) {
+            // Log FCM sync error but don't fail the main operation
+            logger.error(
+                `Failed to sync profile data to FCM tokens for mobile: ${currentMobile}`,
+                fcmError
+            ); 
+         }
 
 
         return res.status(200).json(new ApiResponse(200,response.data,"Operation completed successfully"));

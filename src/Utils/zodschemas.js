@@ -11,6 +11,13 @@ export const signupSchema = z.object({
     password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+export const adminsignupSchema = z.object({
+    
+    userName: z.string().min(2, "Name must be at least 2 characters"),
+   
+    password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 
 
 export const updatesSchema = z.object({
@@ -259,4 +266,17 @@ export const ReferandEarnSchema = z.object({
       "Rasgulla",
       "Helmet Theft"
     ]),
+});
+
+
+
+export const sendFilteredNotificationSchema = z.object({
+  title: z.string().min(1, "title is required"),
+  body: z.string().min(1, "body is required"),
+  platform: z.union([z.literal("android"), z.literal("ios")]).optional(),
+  state: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  occupation: z.string().min(1).optional(),
+  interests: z.array(z.string().min(1)).optional(),
+  
 });

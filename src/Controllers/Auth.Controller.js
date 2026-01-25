@@ -10,20 +10,7 @@ import admin from "../Utils/firebase.js";
 const normalize = (num) => num?.toString().replace(/\D/g, "").slice(-10);
 
 
-// just an helper fuction to check mobile exist or not #currently not used anywhere
-async function checkMobileNumberExists(mobile){
-    try {
-        if (!mobile && checkMobileExistsSchema.safeParse({mobile}).success) {
-            return false
-        }
-        const response=await bimapi.post("/CheckMobileAccount",{mobile});
-        return response.data.exists;
 
-        
-    } catch (error) {
-        throw new Error("Error checking mobile number existence");
-    }
-}
 
 
 const generateAccessAndRefreshToken = async (mobile) => {
@@ -169,6 +156,10 @@ export const getUserTokens =asynchandler(async(req,res) =>{
             return res.status(400).json(new ApiResponse(400,{},"Token is required"));
         }          
         const decoded = await admin.auth().verifyIdToken(token);
+        if (!decoded.phone_number) {
+  return res.status(400).json(new ApiResponse(400, {}, "Phone number missing in token"));
+}
+    
 
         if (normalize(decoded.phone_number) != normalize(mobile)){
             return res.status(400).json(new ApiResponse(400,{},"Invalid Token"))
