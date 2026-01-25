@@ -1,6 +1,9 @@
 import { Admin } from "../Models/AdminAuth.Model.js";
+import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
+import logger from "../Utils/logger.js";
 import { adminsignupSchema } from "../Utils/zodschemas.js";
+import jwt from "jsonwebtoken";
 
 
 export const refreshAccessToken = asynchandler(async (req, res) => {
@@ -68,6 +71,7 @@ export const adminSignup=asynchandler(async(req,res)=>{
         
         return res.status(201).json(new ApiResponse(201,{userName:newAdmin.userName,accessToken,refreshToken},"Admin created successfully"));
     } catch (error) {
+        logger.error(error);
         return res.status(500).json(new ApiResponse(500,{},"Internal server error"))
     }
 });
