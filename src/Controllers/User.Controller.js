@@ -4,6 +4,7 @@ import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
 import { checkMobileExistsSchema, updatesSchema } from "../Utils/zodschemas.js";
+import logger from "../Utils/logger.js";
 
 
 function calculateProfileCompletion(profile, fields) {
@@ -44,20 +45,27 @@ export const getUserDetails=asynchandler(async(req,res,next)=>{
             return res.status(404).json(new ApiResponse(404,{},"User not found"));
         }
 
-        const plancount={Gold:0,Silver:0,NA:0};
-        const policydata= await UserPolicies.findOne({mobile:mobile});
-        const policyDetails=policydata?.data?.policies ;
+        const plancount={"Gold":0,"Silver":0,"NA":0};
+        const policydata= await UserPolicies.findOne({mobile:mobile}).lean();
 
+        
+        const policyDetails=policydata?.policies ;
+        
 
-        for (const policy of policyDetails || []) {
+        for (let policy of policyDetails || []) {
+            if (policy.source ==="basecode") {
+                continue; 
+            }
+           
             if (policy.plan) {
                 plancount[policy.plan] = (plancount[policy.plan] || 0) + 1;
             }
         }
-        if(plancount.Gold>0){
+     
+        if(plancount["Gold"]>0){
             result.data.MembershipPlan="Gold"
         }
-        else if(plancount.Silver>0){
+        else if(plancount["Silver"]>0){
             result.data.MembershipPlan="Silver"
         }
         else{

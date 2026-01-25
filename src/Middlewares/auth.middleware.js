@@ -67,7 +67,7 @@ export const verifyAdminJWT = asynchandler(async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    const auth = await Admin.findOne({ userName: decoded.userName });
+    const auth = await Admin.findOne({ email: decoded.email });
     if (!auth) {
       return res.status(401).json(new ApiResponse(401, {}, "Invalid token"));
     }

@@ -433,17 +433,19 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                 let policyanalysis = null;
                 let policyDetails = null;
 
+                 try {
+                  policyDetails = await extractPolicyDetailsFromFile(filePath);
+                } catch (e) {
+                  logger.warn(`Policy extraction failed for ${filePath}: ${e.message}`);
+                }
+
                 try {
                   policyanalysis = await getpolicyanalysis(filePath);
                 } catch (e) {
                   logger.warn(`Policy analysis failed for ${filePath}: ${e.message}`);
                 }
 
-                try {
-                  policyDetails = await extractPolicyDetailsFromFile(filePath);
-                } catch (e) {
-                  logger.warn(`Policy extraction failed for ${filePath}: ${e.message}`);
-                }
+               
 
                 if (policyDetails) {
                     policyDetails.policyAnalysis=policyanalysis;
@@ -456,11 +458,6 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                           if(policy.grossPremium){
                             plan = getPlanFromPremium(policy.grossPremium);
                           }
-                          else {
-                            plan = getPlanFromPremium((policy.premiumBreakup?.grossPremium) ? policy.premiumBreakup?.grossPremium : policy.premiumBreakup?.totalPremium);
-                          }
-
-                           
                           if (plan) {                            
                             policyDetails.plan = plan;
                             policyDetails.planStartDate=policy.policyStartDate;

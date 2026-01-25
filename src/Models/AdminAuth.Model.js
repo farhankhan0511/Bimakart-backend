@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt";
+import { email } from "zod";
 
 const AdminSchema = new mongoose.Schema(
   {
-    userName: {
+    email: {
       type: String,
       required: true,
         unique: true,
@@ -37,7 +38,7 @@ AdminSchema.methods.isPasswordCorrect=async function(password){
 AdminSchema.methods.generateAccessToken=function(){
     return jwt.sign({
         _id:this._id,
-        userName:this.userName
+        email:this.email
 
     },
     process.env.ACCESS_TOKEN_SECRET,
@@ -51,7 +52,7 @@ AdminSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
-      userName: this.userName,
+      email: this.email,
     },
     process.env.REFRESH_TOKEN_SECRET,
     {

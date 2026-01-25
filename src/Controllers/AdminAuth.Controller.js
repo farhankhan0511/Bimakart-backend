@@ -38,8 +38,8 @@ export const refreshAccessToken = asynchandler(async (req, res) => {
     return res.status(500).json(new ApiResponse(500,{},"Internal server error"))
   }});
 
-const generateAccessAndRefreshToken = async (userName) => {
-    const author = await Admin.findOne({ userName: userName });
+const generateAccessAndRefreshToken = async (email) => {
+    const author = await Admin.findOne({ email: email });
   
     if (!author) throw new Error("Auth record not found");
   
@@ -53,23 +53,23 @@ const generateAccessAndRefreshToken = async (userName) => {
   };
 
 export const adminSignup=asynchandler(async(req,res)=>{
-    const {userName,password}=req.body;
+    const {email,password}=req.body;
     try {
-        if(!userName || !password){
-            return res.status(400).json(new ApiResponse(400,{},"Username and password are required"));
+        if(!email || !password){
+            return res.status(400).json(new ApiResponse(400,{},"Email and password are required"));
         }
-            if(!adminsignupSchema.safeParse({userName,password}).success){
-            return res.status(400).json(new ApiResponse(400,{},"Invalid username or password format")); 
+            if(!adminsignupSchema.safeParse({email,password}).success){
+            return res.status(400).json(new ApiResponse(400,{},"Invalid email or password format")); 
         }
-        const admin=await Admin.findOne({userName:userName});
+        const admin=await Admin.findOne({email:email});
         if(admin){
             return res.status(401).json(new ApiResponse(401,{},"Admin already exists"));
         };
         
-        const newAdmin=await Admin.create({userName,password});
-        const {accessToken,refreshToken}=  await generateAccessAndRefreshToken(userName);
-        
-        return res.status(201).json(new ApiResponse(201,{userName:newAdmin.userName,accessToken,refreshToken},"Admin created successfully"));
+        const newAdmin=await Admin.create({email,password});
+        const {accessToken,refreshToken}=  await generateAccessAndRefreshToken(email);
+
+        return res.status(201).json(new ApiResponse(201,{email:newAdmin.email,accessToken,refreshToken},"Admin created successfully"));
     } catch (error) {
         logger.error(error);
         return res.status(500).json(new ApiResponse(500,{},"Internal server error"))
@@ -77,29 +77,29 @@ export const adminSignup=asynchandler(async(req,res)=>{
 });
 
 export const adminLogin = asynchandler(async (req, res) => {
-    const { userName, password } = req.body;
+    const { email, password } = req.body;
     try {
-        if (!userName || !password) {
-            return res.status(400).json(new ApiResponse(400, {},"Username and password are required"));
+        if (!email || !password) {
+            return res.status(400).json(new ApiResponse(400, {},"Email and password are required"));
         };
-        if(!adminsignupSchema.safeParse({userName,password}).success){
-            return res.status(400).json(new ApiResponse(400,{},"Invalid username or password format")); 
+        if(!adminsignupSchema.safeParse({email,password}).success){
+            return res.status(400).json(new ApiResponse(400,{},"Invalid email or password format")); 
         };
-        const admin = await Admin.findOne({ userName: userName });
+        const admin = await Admin.findOne({ email: email });
         if (!admin) {
-            return res.status(401).json(new ApiResponse(401, {},"Invalid username or password"));
+            return res.status(401).json(new ApiResponse(401, {},"Invalid email or password"));
         }
         const validpassword=await admin.isPasswordCorrect(password)
 
         
 
         if(!validpassword){
-            return res.status(401).json(new ApiResponse(401, {},"Invalid username or password"));
+            return res.status(401).json(new ApiResponse(401, {},"Invalid email or password"));
         }
 
-        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(userName);
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(email);
 
-        return res.status(200).json(new ApiResponse(200, { userName: admin.userName, accessToken, refreshToken },"Login successful"));
+        return res.status(200).json(new ApiResponse(200, { email: admin.email, accessToken, refreshToken },"Login successful"));
     } catch (error) {
         return res.status(500).json(new ApiResponse(500,{},"Internal server error"))
     }
