@@ -19,6 +19,16 @@ const options = {
         description: "Production server",
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "Enter JWT token without the 'Bearer ' prefix",
+        },
+      },
+    },
   },
 
   apis: [
