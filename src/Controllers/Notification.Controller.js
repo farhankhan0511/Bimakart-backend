@@ -1,4 +1,5 @@
 import { FcmToken } from "../Models/FCM.Model.js";
+import { Notifications } from "../Models/Notification.model.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
 import admin from "../Utils/firebase.js";
@@ -219,6 +220,11 @@ if (!parsed.success) {
     }
 
     logger.info(`Notification sent - Success: ${totalSuccess}, Failed: ${totalFailure}, Invalid: ${invalidTokens.length}`);
+    Notifications.create({
+      title,
+      body,
+      filters:filter
+    });
 
     return res.status(200).json(
       new ApiResponse(
@@ -243,4 +249,17 @@ if (!parsed.success) {
 });
 
 
-
+export const getPastNotifications = asynchandler(async (req, res, next) => {
+  try {
+    const notifications = await Notifications.find()
+      .sort({ createdAt: -1 })
+      .lean();
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { notifications }, "Notifications fetched successfully"));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, "Internal server error"));
+  }
+});
