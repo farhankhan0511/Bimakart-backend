@@ -97,7 +97,7 @@ router.post("/uploadbanner",uploadimage.single("bannerImage"),UploadBanner)
 /**
  * @openapi
  * /api/marketing/toggle-banner-status:
- *   post:
+ *   patch:
  *     summary: Toggle banner active status
  *     description: Toggles the `isActive` flag for a banner by ID.
  *     tags:
