@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { uploadimage} from "../Middlewares/upload.middleware.js";
 import { DeleteBanner, getBanners, getLiveBanners, getTutorialVideos, ToggleBannerStatus, UploadBanner } from "../Controllers/Marketing.controller.js";
+import { verifyAdminJWT } from "../Middlewares/auth.middleware.js";
 
 const router=Router();
 
@@ -20,7 +21,7 @@ const router=Router();
  *       500:
  *         description: Internal server error
  */
-router.get("/banners",getLiveBanners);
+router.get("/banners", getLiveBanners);
 
 
 /**
@@ -56,7 +57,7 @@ router.get("/tutorial-videos",getTutorialVideos);
  *       500:
  *         description: Internal server error
  */
-router.get("/allbanners",getBanners);
+router.get("/allbanners",verifyAdminJWT,getBanners);
 
 
 /**
@@ -91,7 +92,7 @@ router.get("/allbanners",getBanners);
  *       500:
  *         description: Internal server error or S3 upload failure
  */
-router.post("/uploadbanner",uploadimage.single("bannerImage"),UploadBanner)
+router.post("/uploadbanner",verifyAdminJWT,uploadimage.single("bannerImage"),UploadBanner)
 
 
 /**
@@ -124,7 +125,7 @@ router.post("/uploadbanner",uploadimage.single("bannerImage"),UploadBanner)
  *       500:
  *         description: Internal server error
  */
-router.patch("/toggle-banner-status",ToggleBannerStatus);
+router.patch("/toggle-banner-status",verifyAdminJWT,ToggleBannerStatus);
 
 
 /**
@@ -157,6 +158,6 @@ router.patch("/toggle-banner-status",ToggleBannerStatus);
  *       500:
  *         description: Internal server error
  */
-router.post("/delete-banner",DeleteBanner);
+router.post("/delete-banner",verifyAdminJWT,DeleteBanner);
 
 export default router;
