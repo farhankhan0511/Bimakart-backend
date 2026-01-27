@@ -4,9 +4,58 @@ import { DeleteBanner, getBanners, getLiveBanners, getTutorialVideos, ToggleBann
 
 const router=Router();
 
+/**
+ * @openapi
+ * /banners:
+ *   get:
+ *     summary: Get active banners
+ *     description: Returns all active banners for display.
+ *     tags:
+ *       - Market
+ *     responses:
+ *       200:
+ *         description: Banners fetched successfully
+ *       404:
+ *         description: No active banners found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/banners",getLiveBanners);
+
+
+/**
+ * @openapi
+ * /tutorial-videos:
+ *   get:
+ *     summary: Get tutorial videos
+ *     description: Returns an array of tutorial videos and metadata.
+ *     tags:
+ *       - Market
+ *     responses:
+ *       200:
+ *         description: Tutorial videos fetched successfully
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/tutorial-videos",getTutorialVideos);
 
+
+/**
+ * @openapi
+ * /allbanners:
+ *   get:
+ *     summary: Get all banners
+ *     description: Returns all banners (active and inactive). Intended for admin use.
+ *     tags:
+ *       - Market
+ *     responses:
+ *       200:
+ *         description: Banners fetched successfully
+ *       404:
+ *         description: No banners found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/allbanners",getBanners);
 
 

@@ -109,8 +109,67 @@ router.post("/signup", SignupUser);
  */
 router.post("/login", VerifyPassword);
 
+
+/**
+ * @openapi
+ * /auth/refreshaccesstoken:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Exchanges a refresh token for a new access token.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: Refresh token missing, invalid or expired
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/refreshaccesstoken",refreshAccessToken)
 
+
+/**
+ * @openapi
+ * /auth/getuserTokens:
+ *   get:
+ *     summary: Get tokens for OTP sign-in
+ *     description: Verifies Firebase token and returns access and refresh tokens for the provided mobile number.
+ *     tags:
+ *       - Auth
+ *     parameters:
+ *       - in: query
+ *         name: mobile
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: User mobile number
+ *       - in: query
+ *         name: token
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Firebase ID token
+ *     responses:
+ *       200:
+ *         description: Tokens fetched successfully
+ *       400:
+ *         description: Missing or invalid mobile/token
+ *       500:
+ *         description: Error while generating tokens
+ */
 router.get("/getuserTokens",getUserTokens)
 
 

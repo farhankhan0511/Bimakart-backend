@@ -107,14 +107,18 @@ router.post("/getUserDetails", verifyJWT,getUserDetails);
  */
 router.post("/updateUserDetails", verifyJWT, updateUserDetails);
 
+
+
 /**
  * @openapi
  * /policydata:
  *   post:
- *     summary: Get user policy data
- *     description: Retrieves user details along with all associated motor insurance policies.
+ *     summary: Get user policies
+ *     description: Retrieves policies for a user. Can optionally refresh policies from external APIs. Uses file locking to prevent redundant requests.
  *     tags:
- *       - Policy
+ *       - User
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -126,122 +130,64 @@ router.post("/updateUserDetails", verifyJWT, updateUserDetails);
  *             properties:
  *               mobile:
  *                 type: string
- *                 example: "9770942698"
+ *                 example: "9876543210"
  *               refresh:
  *                 type: boolean
- *                 example: true
+ *                 default: false
+ *                 description: Force refresh policies from external APIs instead of using cache
  *     responses:
  *       200:
- *         description: User policies retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 statusCode:
- *                   type: number
- *                   example: 200
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: User policies retrieved successfully from API
- *                 data:
- *                   type: object
- *                   properties:
- *                     source:
- *                       type: string
- *                       example: api
- *                     data:
- *                       type: object
- *                       properties:
- *                         _id:
- *                           type: string
- *                           example: "69567864964afdd1965d3730"
- *                         mobile:
- *                           type: string
- *                           example: "9770942698"
- *                         processing:
- *                           type: object
- *                           properties:
- *                             inProgress:
- *                               type: boolean
- *                               example: false
- *                         policies:
- *                           type: array
- *                           items:
- *                             type: object
- *                             properties:
- *                               id:
- *                                 type: string
- *                                 example: "215067/50/26/000005/000025"
- *                               fileName:
- *                                 type: string
- *                                 example: "policy_9770942698_1.pdf"
- *                               timestamp:
- *                                 type: string
- *                                 format: date-time
- *                               manual_id:
- *                                 type: string
- *                               source:
- *                                 type: string
- *                                 example: url
- *                               motorInsurancePolicy:
- *                                 type: object
- *                                 properties:
- *                                   id:
- *                                     type: string
- *                                   customerName:
- *                                     type: string
- *                                   contactNumber:
- *                                     type: string
- *                                     nullable: true
- *                                   policyNumber:
- *                                     type: string
- *                                   policyType:
- *                                     type: string
- *                                     nullable: true
- *                                   policyStartDate:
- *                                     type: string
- *                                     format: date
- *                                   policyEndDate:
- *                                     type: string
- *                                     format: date
- *                                   emailId:
- *                                     type: string
- *                                   vehicleMakeModel:
- *                                     type: string
- *                                     nullable: true
- *                                   policyIssueDate:
- *                                     type: string
- *                                     format: date
- *                                   totalIdv:
- *                                     type: number
- *                                     nullable: true
- *                                   netPremium:
- *                                     type: number
- *                                   grossPremium:
- *                                     type: number
- *                                   insurerName:
- *                                     type: string
- *                         createdAt:
- *                           type: string
- *                           format: date-time
- *                         updatedAt:
- *                           type: string
- *                           format: date-time
+ *         description: Policies retrieved successfully (from cache or API)
  *       400:
- *         description: Invalid request payload
+ *         description: Invalid mobile number or refresh parameter
+ *       404:
+ *         description: No policies found
+ *       409:
+ *         description: Policy retrieval already in progress for this mobile
  *       500:
  *         description: Internal server error
  */
-
-
 router.post("/policydata", verifyJWT, getUserPolicies);
 
 
 
+/**
+ * @openapi
+ * /uploadpolicy:
+ *   post:
+ *     summary: Upload a policy document
+ *     description: Uploads a policy PDF document, extracts policy details via OCR and AI analysis, and stores it against the user's mobile number. Expects multipart/form-data with `newpolicy` file and `mobile` field.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - mobile
+ *               - newpolicy
+ *             properties:
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
+ *               newpolicy:
+ *                 type: string
+ *                 format: binary
+ *                 description: Policy PDF file to upload
+ *     responses:
+ *       200:
+ *         description: Policy uploaded and processed successfully
+ *       400:
+ *         description: Invalid mobile format or policy already exists
+ *       404:
+ *         description: Policy file not found
+ *       500:
+ *         description: Error during upload or policy extraction
+ */
 router.post("/uploadpolicy",verifyJWT,upload.single("newpolicy"),UploadPolicy)
 
 
