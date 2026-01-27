@@ -131,7 +131,7 @@ router.patch("/toggle-banner-status",verifyAdminJWT,ToggleBannerStatus);
 /**
  * @openapi
  * /api/marketing/delete-banner:
- *   post:
+ *   delete:
  *     summary: Delete a banner
  *     description: Deletes a banner by ID.
  *     tags:
@@ -158,6 +158,6 @@ router.patch("/toggle-banner-status",verifyAdminJWT,ToggleBannerStatus);
  *       500:
  *         description: Internal server error
  */
-router.post("/delete-banner",verifyAdminJWT,DeleteBanner);
+router.delete("/delete-banner",verifyAdminJWT,DeleteBanner);
 
 export default router;
