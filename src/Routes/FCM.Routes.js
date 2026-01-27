@@ -9,7 +9,7 @@ import { deactivateFcmToken, getPastNotifications, saveandupdateFcmToken, sendFi
 
 /**
  * @openapi
- * /saveorupdatetoken:
+ * /api/fcm/saveorupdatetoken:
  *   post:
  *     summary: Save or update FCM token
  *     description: Stores or updates the FCM token for the authenticated user's device.
@@ -51,7 +51,7 @@ router.post("/saveorupdatetoken",verifyJWT,saveandupdateFcmToken);
 
 /**
  * @openapi
- * /deactivatefcmtoken:
+ * /api/fcm/deactivatefcmtoken:
  *   post:
  *     summary: Deactivate an FCM token
  *     description: Marks the provided device's FCM token as inactive for the authenticated user.
@@ -86,7 +86,7 @@ router.post("/deactivatefcmtoken",verifyJWT,deactivateFcmToken);
 
 /**
  * @openapi
- * /sendNotification:
+ * /api/fcm/sendNotification:
  *   post:
  *     summary: Send filtered notification (admin)
  *     description: Sends a notification to devices matching provided filters. Admin-only route.
@@ -142,7 +142,7 @@ router.post("/sendNotification",verifyAdminJWT,sendFilteredNotification);
 
 /**
  * @openapi
- * /pastnotifications:
+ * /api/fcm/pastnotifications:
  *   get:
  *     summary: Get past notifications (admin)
  *     description: Returns a list of previously sent notifications. Admin-only route.

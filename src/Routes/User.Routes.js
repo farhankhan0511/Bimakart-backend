@@ -9,7 +9,7 @@ const router=Router()
 
 /**
  * @openapi
- * /auth/getUserDetails:
+ * /api/user/getUserDetails:
  *   post:
  *     summary: Get user details by mobile number
  *     description: Retrieves user details if the mobile number exists.
@@ -42,7 +42,7 @@ router.post("/getUserDetails", verifyJWT,getUserDetails);
 
 /**
  * @openapi
- * /updateUserDetails:
+ * /api/user/updateUserDetails:
  *   post:
  *     summary: Update user details
  *     description: Updates user profile information using current mobile number.
@@ -111,7 +111,7 @@ router.post("/updateUserDetails", verifyJWT, updateUserDetails);
 
 /**
  * @openapi
- * /policydata:
+ * /api/user/policydata:
  *   post:
  *     summary: Get user policies
  *     description: Retrieves policies for a user. Can optionally refresh policies from external APIs. Uses file locking to prevent redundant requests.
@@ -153,7 +153,7 @@ router.post("/policydata", verifyJWT, getUserPolicies);
 
 /**
  * @openapi
- * /uploadpolicy:
+ * /api/user/uploadpolicy:
  *   post:
  *     summary: Upload a policy document
  *     description: Uploads a policy PDF document, extracts policy details via OCR and AI analysis, and stores it against the user's mobile number. Expects multipart/form-data with `newpolicy` file and `mobile` field.

@@ -7,7 +7,7 @@ import { adminLogin, adminSignup, refreshAccessToken } from "../Controllers/Admi
 
 /**
  * @openapi
- * /signup:
+ * /api/admin/signup:
  *   post:
  *     summary: Register a new admin
  *     description: Creates a new admin account and returns access and refresh tokens.
@@ -45,7 +45,7 @@ router.post("/signup",adminSignup);
 
 /**
  * @openapi
- * /login:
+ * /api/admin/login:
  *   post:
  *     summary: Admin login
  *     description: Authenticates admin credentials and returns access and refresh tokens.
@@ -83,7 +83,7 @@ router.post("/login",adminLogin);
 
 /**
  * @openapi
- * /refreshtoken:
+ * /api/admin/refreshtoken:
  *   post:
  *     summary: Refresh admin access token
  *     description: Exchanges a valid refresh token for a new access token. Requires an admin access token in the `Authorization` header as an additional guard.

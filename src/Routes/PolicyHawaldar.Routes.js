@@ -8,7 +8,7 @@ import { policyanalysis } from "../Controllers/PolicyHawaldar.Controller.js";
 
 /**
  * @openapi
- * /policyanalysis:
+ * /api/policyhawaldar/policyanalysis:
  *   post:
  *     summary: Analyze a policy document
  *     description: Uploads a policy document and performs AI-driven analysis. Expects multipart/form-data with a `file` field.

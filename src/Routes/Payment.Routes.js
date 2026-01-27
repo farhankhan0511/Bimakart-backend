@@ -6,7 +6,7 @@ const router=Router()
 
 /**
  * @openapi
- * /preapprovalcheck:
+ * /api/payment/preapprovalcheck:
  *   post:
  *     summary: Loan pre-approval check
  *     description: Performs a pre-approval check for a loan based on user details like PAN, DOB, loan amount, and contact information.

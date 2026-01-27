@@ -7,7 +7,7 @@ import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
 /**
  * @openapi
- * /buymotorpolicy:
+ * /api/purchase/buymotorpolicy:
  *   post:
  *     summary: Purchase a motor insurance policy
  *     description: Submits a motor insurance policy purchase request with vehicle and contact details.
@@ -60,7 +60,7 @@ router.post("/buymotorpolicy",verifyJWT, BuyMotorPolicy);
 
 /**
  * @openapi
- * /buyhealthpolicy:
+ * /api/purchase/buyhealthpolicy:
  *   post:
  *     summary: Purchase a health insurance policy
  *     description: Submits a health insurance policy purchase request with personal and coverage details.
@@ -117,7 +117,7 @@ router.post("/buyhealthpolicy", verifyJWT, BuyHealthPolicy);
 
 /**
  * @openapi
- * /buyrudrakshpolicy:
+ * /api/purchase/buyrudrakshpolicy:
  *   post:
  *     summary: Purchase a Rudraksh insurance policy
  *     description: Submits a Rudraksh insurance policy purchase request with personal, nominee, and coverage details.
@@ -191,7 +191,7 @@ router.post("/buyrudrakshpolicy", verifyJWT, BuyRudrakshPolicy);
 
 /**
  * @openapi
- * /buymembership:
+ * /api/purchase/buymembership:
  *   post:
  *     summary: Purchase a membership plan
  *     description: Submits a membership plan purchase request.
@@ -240,7 +240,7 @@ router.post("/buymembership", verifyJWT, BuyMemebershipPlan);
 
 /**
  * @openapi
- * /referandearn:
+ * /api/purchase/referandearn:
  *   post:
  *     summary: Refer a contact for insurance
  *     description: Submits a referral request for an insurance product. The referring user's mobile is captured from JWT.

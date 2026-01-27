@@ -6,7 +6,7 @@ const router=Router();
 
 /**
  * @openapi
- * /banners:
+ * /api/marketing/banners:
  *   get:
  *     summary: Get active banners
  *     description: Returns all active banners for display.
@@ -25,7 +25,7 @@ router.get("/banners",getLiveBanners);
 
 /**
  * @openapi
- * /tutorial-videos:
+ * /api/marketing/tutorial-videos:
  *   get:
  *     summary: Get tutorial videos
  *     description: Returns an array of tutorial videos and metadata.
@@ -42,7 +42,7 @@ router.get("/tutorial-videos",getTutorialVideos);
 
 /**
  * @openapi
- * /allbanners:
+ * /api/marketing/allbanners:
  *   get:
  *     summary: Get all banners
  *     description: Returns all banners (active and inactive). Intended for admin use.
@@ -59,10 +59,104 @@ router.get("/tutorial-videos",getTutorialVideos);
 router.get("/allbanners",getBanners);
 
 
+/**
+ * @openapi
+ * /api/marketing/uploadbanner:
+ *   post:
+ *     summary: Upload a banner image
+ *     description: Uploads a banner image and creates a banner record. Expects multipart/form-data with `bannerImage` and `web_url`.
+ *     tags:
+ *       - Market
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - bannerImage
+ *               - web_url
+ *             properties:
+ *               bannerImage:
+ *                 type: string
+ *                 format: binary
+ *               web_url:
+ *                 type: string
+ *                 example: "https://example.com/landing"
+ *     responses:
+ *       200:
+ *         description: Banner uploaded successfully
+ *       400:
+ *         description: Image or web_url missing
+ *       500:
+ *         description: Internal server error or S3 upload failure
+ */
 router.post("/uploadbanner",uploadimage.single("bannerImage"),UploadBanner)
 
+
+/**
+ * @openapi
+ * /api/marketing/toggle-banner-status:
+ *   post:
+ *     summary: Toggle banner active status
+ *     description: Toggles the `isActive` flag for a banner by ID.
+ *     tags:
+ *       - Market
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - bannerId
+ *             properties:
+ *               bannerId:
+ *                 type: string
+ *                 example: "60d0fe4f5311236168a109ca"
+ *     responses:
+ *       200:
+ *         description: Banner status updated successfully
+ *       400:
+ *         description: Banner ID is required
+ *       404:
+ *         description: Banner not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/toggle-banner-status",ToggleBannerStatus);
 
+
+/**
+ * @openapi
+ * /api/marketing/delete-banner:
+ *   post:
+ *     summary: Delete a banner
+ *     description: Deletes a banner by ID.
+ *     tags:
+ *       - Market
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - bannerId
+ *             properties:
+ *               bannerId:
+ *                 type: string
+ *                 example: "60d0fe4f5311236168a109ca"
+ *     responses:
+ *       200:
+ *         description: Banner deleted successfully
+ *       400:
+ *         description: Banner ID is required
+ *       404:
+ *         description: Banner not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/delete-banner",DeleteBanner);
 
 export default router;

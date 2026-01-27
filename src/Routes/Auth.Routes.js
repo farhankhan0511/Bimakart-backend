@@ -6,7 +6,7 @@ const router=Router()
 
 /**
  * @openapi
- * /auth/check-mobile:
+ * /api/auth/checkmobileexist:
  *   post:
  *     summary: Check if mobile number exists
  *     tags: [Auth]
@@ -33,7 +33,7 @@ router.post("/checkmobileexist",checkMobileExist)
 
 /**
  * @openapi
- * /auth/signup:
+ * /api/auth/signup:
  *   post:
  *     summary: Signup and create a new user
  *     description: Creates a new user account in the Salesforce database.
@@ -75,7 +75,7 @@ router.post("/signup", SignupUser);
 
 /**
  * @openapi
- * /auth/login:
+ * /api/auth/login:
  *   post:
  *     summary: Verify password and login user
  *     description: Verifies the encrypted password and authenticates the user.
@@ -112,7 +112,7 @@ router.post("/login", VerifyPassword);
 
 /**
  * @openapi
- * /auth/refreshaccesstoken:
+ * /api/auth/refreshaccesstoken:
  *   post:
  *     summary: Refresh access token
  *     description: Exchanges a refresh token for a new access token.
@@ -143,7 +143,7 @@ router.post("/refreshaccesstoken",refreshAccessToken)
 
 /**
  * @openapi
- * /auth/getuserTokens:
+ * /api/auth/getuserTokens:
  *   get:
  *     summary: Get tokens for OTP sign-in
  *     description: Verifies Firebase token and returns access and refresh tokens for the provided mobile number.
