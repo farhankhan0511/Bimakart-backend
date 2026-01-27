@@ -124,7 +124,7 @@ router.post("/uploadbanner",uploadimage.single("bannerImage"),UploadBanner)
  *       500:
  *         description: Internal server error
  */
-router.post("/toggle-banner-status",ToggleBannerStatus);
+router.patch("/toggle-banner-status",ToggleBannerStatus);
 
 
 /**
