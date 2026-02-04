@@ -7,6 +7,20 @@ import { checkMobileExistsSchema, updatesSchema } from "../Utils/zodschemas.js";
 import logger from "../Utils/logger.js";
 
 
+const PROFILE_FIELDS = [
+  "name",
+  "mobile",
+  "email",
+  "state",
+  "city",
+  "dob",
+  "gender",
+  "occupation",
+  "interests",
+  "heardFrom",
+];
+
+
 function calculateProfileCompletion(profile, fields) {
   let filledCount = 0;
 
@@ -44,7 +58,7 @@ export const getUserDetails=asynchandler(async(req,res,next)=>{
         if (!result.found) {
             return res.status(404).json(new ApiResponse(404,{},"User not found"));
         }
-        result.data.profilecompletionpercentage=calculateProfileCompletion(result.data,Object.keys(result.data))
+        result.data.profilecompletionpercentage=calculateProfileCompletion(result.data,PROFILE_FIELDS);
         const plancount={"Gold":0,"Silver":0,"NA":0};
         const policydata= await UserPolicies.findOne({mobile:mobile}).lean();
 
