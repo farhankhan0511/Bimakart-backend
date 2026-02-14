@@ -2,7 +2,7 @@ import { Router } from "express";
 
 const router = Router();
 
-import { BuyHealthPolicy, BuyMemebershipPlan, BuyMotorPolicy, BuyRudrakshPolicy, ReferandEarn } from "../Controllers/PurchasePolicy.Controller.js";
+import { AddReferral, BuyElderPolicy, BuyHealthPolicy, BuyLifePolicy, BuyMemebershipPlan, BuyMotorPolicy, BuyRudrakshPolicy, ReferandEarn } from "../Controllers/PurchasePolicy.Controller.js";
 import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
 /**
@@ -113,6 +113,123 @@ router.post("/buymotorpolicy",verifyJWT, BuyMotorPolicy);
  *         description: Server error
  */
 router.post("/buyhealthpolicy", verifyJWT, BuyHealthPolicy);
+
+
+/**
+ * @openapi
+ * /api/purchase/buylifepolicy:
+ *   post:
+ *     summary: Purchase a life insurance policy
+ *     description: Submits a life insurance policy purchase request with personal and coverage details.
+ *     tags:
+ *       - Purchase
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - email
+ *               - mobile
+ *               - insureFor
+ *               - whatsappNumber
+ *               - pinCode
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "Priya"
+ *               lastName:
+ *                 type: string
+ *                 example: "Singh"
+ *               email:
+ *                 type: string
+ *                 example: "priya@example.com"
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
+ *               insureFor:
+ *                 type: string
+ *                 example: "Self"
+ *               whatsappNumber:
+ *                 type: string
+ *                 example: "9876543210"
+ *               pinCode:
+ *                 type: string
+ *                 example: "400001"
+ *     responses:
+ *       200:
+ *         description: Health policy purchase data submitted successfully
+ *       400:
+ *         description: Validation failed
+ *       500:
+ *         description: Server error
+ */
+router.post("/buylifepolicy", verifyJWT, BuyLifePolicy);
+
+
+
+/**
+ * @openapi
+ * /api/purchase/buyelderlypolicy:
+ *   post:
+ *     summary: Purchase an elderly insurance policy
+ *     description: Submits an elderly insurance policy purchase request with personal and coverage details.
+ *     tags:
+ *       - Purchase
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - email
+ *               - mobile
+ *               - insureFor
+ *               - whatsappNumber
+ *               - pinCode
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "Priya"
+ *               lastName:
+ *                 type: string
+ *                 example: "Singh"
+ *               email:
+ *                 type: string
+ *                 example: "priya@example.com"
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
+ *               insureFor:
+ *                 type: string
+ *                 example: "Self"
+ *               whatsappNumber:
+ *                 type: string
+ *                 example: "9876543210"
+ *               pinCode:
+ *                 type: string
+ *                 example: "400001"
+ *     responses:
+ *       200:
+ *         description: Health policy purchase data submitted successfully
+ *       400:
+ *         description: Validation failed
+ *       500:
+ *         description: Server error
+ */
+router.post("/buyelderlypolicy", verifyJWT, BuyElderPolicy);
+
+
 
 
 /**
@@ -281,6 +398,59 @@ router.post("/buymembership", verifyJWT, BuyMemebershipPlan);
  *         description: Server error
  */
 router.post("/referandearn", verifyJWT, ReferandEarn);
+
+
+/**
+ * @openapi
+ * /api/purchase/addreferral:
+ *   post:
+ *     summary: Add a referral
+ *     description: Submits a referral with source code and contact details. The referrer's mobile is captured from JWT.
+ *     tags:
+ *       - Purchase
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - source
+ *               - referralCode
+ *               - referrerNumber
+ *               - referredNumber
+ *               - relation
+ *               - referralName
+ *             properties:
+ *               source:
+ *                 type: string
+ *                 example: "web"
+ *               referralCode:
+ *                 type: string
+ *                 example: "REF123456"
+ *               referrerNumber:
+ *                 type: string
+ *                 example: "9876543210"
+ *               referredNumber:
+ *                 type: string
+ *                 example: "9123456789"
+ *               relation:
+ *                 type: string
+ *                 example: "Friend"
+ *               referralName:
+ *                 type: string
+ *                 example: "John Doe"
+ *     responses:
+ *       200:
+ *         description: Referral added successfully
+ *       400:
+ *         description: Validation failed or Failed to add referral
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/addreferral",verifyJWT,AddReferral)
 
 
 export default router;

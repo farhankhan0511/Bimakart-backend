@@ -12,7 +12,7 @@ const UserPoliciesSchema = new mongoose.Schema(
         index: true,
         trim: true,
     },
-    uploadedpolicy:{type:[Object],default:[]},
+ 
     policies: {
    type: [Object],
   default: [],
@@ -38,5 +38,9 @@ const UserPoliciesSchema = new mongoose.Schema(
   
   { timestamps: true }
 )
+UserPoliciesSchema.index(
+  { mobile: 1, "policies.id": 1 },
+  { unique: true, sparse: true }
+);
 
 export const UserPolicies = mongoose.model("UserPolicies", UserPoliciesSchema);

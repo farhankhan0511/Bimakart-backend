@@ -3,7 +3,7 @@ import { FcmToken } from "../Models/FCM.Model.js";
 import { UserPolicies } from "../Models/UseerPolicies.Model.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asynchandler } from "../Utils/asynchandler.js";
-import { checkMobileExistsSchema, updatesSchema } from "../Utils/zodschemas.js";
+import { checkMobileExistsSchema, referralSchema, updatesSchema } from "../Utils/zodschemas.js";
 import logger from "../Utils/logger.js";
 
 
@@ -58,7 +58,7 @@ export const getUserDetails=asynchandler(async(req,res,next)=>{
         if (!result.found) {
             return res.status(404).json(new ApiResponse(404,{},"User not found"));
         }
-        result.data.profilecompletionpercentage=calculateProfileCompletion(result.data,PROFILE_FIELDS);
+        result.data.profilecompletionpercentage=calculateProfileCompletion(result.data.profile,PROFILE_FIELDS);
         const plancount={"Gold":0,"Silver":0,"NA":0};
         const policydata= await UserPolicies.findOne({mobile:mobile}).lean();
 
@@ -97,7 +97,7 @@ export const getUserDetails=asynchandler(async(req,res,next)=>{
 
 export const updateUserDetails=asynchandler(async(req,res,next)=>{
     try {
-        const {currentMobile,updates}=req.body;
+        const {currentMobile,updates,referral}=req.body;
         if (!currentMobile) {
             return res.status(400).json(new ApiResponse(400,{},"Mobile number is required"));
         }
@@ -107,7 +107,19 @@ export const updateUserDetails=asynchandler(async(req,res,next)=>{
         if(!updates || !updatesSchema.safeParse(updates).success){
             return res.status(400).json(new ApiResponse(400,{},"Invalid updates format"));
         }
-        const response=await bimapi.post("/updateUserRecord",{currentMobile:currentMobile,updates}); 
+        if(referral && !referralSchema.safeParse(referral).success){
+            return res.status(400).json(new ApiResponse(400,{},"Invalid referral data format"));
+        }
+        let response;
+        if(referral){
+            response=await bimapi.post("/updateUserRecord",{currentMobile:currentMobile,updates, referral}); 
+        }
+        else{
+         response=await bimapi.post("/updateUserRecord",{currentMobile:currentMobile,updates}); 
+        }
+        if (!response.data.success) {
+            return res.status(400).json(new ApiResponse(400,{},response.data.message || "Failed to update user details"));
+        }
 
          try {
             const fcmUpdateData = {};

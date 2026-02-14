@@ -5,6 +5,7 @@ import { fetchNewToken} from './src/Lib/TokenManager.js';
 
 import logger from './src/Utils/logger.js';
 import { cleanupStaleTokensJob } from './src/Lib/FCMTokencleanercron.js';
+import { loadcoinSettingsCache } from './src/Lib/coinSettingCache.js';
 
 
 const port = process.env.PORT || 8080;
@@ -14,6 +15,8 @@ async function bootstrap() {
     await connectDB();
 
     logger.info("DB connected");
+    await loadcoinSettingsCache();
+    logger.info("Coin settings cache loaded");
     await fetchNewToken();
     logger.info("Initial token fetched");
     app.listen(port,"0.0.0.0", () => {

@@ -1,8 +1,9 @@
 import axios from "axios";
 import { asynchandler } from "../Utils/asynchandler.js";
-import { HealthInsuranceSchema, MotorPolicySchema, PlanSchema, ReferandEarnSchema, RudrakshSchema } from "../Utils/zodschemas.js";
+import { addReferralSchema, ElderlyInsuranceSchema, HealthInsuranceSchema, LifeInsuranceSchema, MotorPolicySchema, PlanSchema, ReferandEarnSchema, RudrakshSchema } from "../Utils/zodschemas.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { success } from "zod";
+import bimapi from "../Lib/AxiosClient.js";
 
 
 export const BuyMotorPolicy = asynchandler(async (req, res) => {
@@ -72,6 +73,98 @@ export const BuyHealthPolicy = asynchandler(async (req, res) => {
     params.append("lead_source", "Digital Medium");
     params.append("source", "App");
     params.append("Policy", "Application - Health Insurance");
+    params.append("firstName", firstName);
+    params.append("lastName", lastName);
+    params.append("insureFor", insureFor);
+    params.append("email", email);
+    params.append("mobile", mobile);
+    params.append("whatsappNumber", whatsappNumber);
+    params.append("pinCode", pinCode);
+
+    const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      responseType: "html",
+    });
+        if (response.status !== 200) {
+            return res.status(502).json(new ApiResponse(false, "Failed to process the policy purchase", null));
+        }
+           return res.status(200).json(new ApiResponse(200,{success:true},"Your data has been sent successfully "))
+      } catch (error) {
+        return res.status(500).json(new ApiResponse(false, "Server Error", null));
+      }
+
+});
+export const BuyLifePolicy = asynchandler(async (req, res) => {
+    const parsed=LifeInsuranceSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return res.status(400).json(new ApiResponse(false,  "Validation failed", null));
+      }
+      try {
+        const {
+    firstName,
+    lastName,
+    email,
+    mobile,
+    insureFor,
+    whatsappNumber,
+    pinCode,
+  } = parsed.data;
+
+  const params = new URLSearchParams();
+    params.append("oid", process.env.OID || "");
+    params.append("retURL", process.env.retURL);
+    params.append("lead_source", "Digital Medium");
+    params.append("source", "App");
+    params.append("Policy", "Application - LifeInsurance");
+    params.append("firstName", firstName);
+    params.append("lastName", lastName);
+    params.append("insureFor", insureFor);
+    params.append("email", email);
+    params.append("mobile", mobile);
+    params.append("whatsappNumber", whatsappNumber);
+    params.append("pinCode", pinCode);
+
+    const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      responseType: "html",
+    });
+        if (response.status !== 200) {
+            return res.status(502).json(new ApiResponse(false, "Failed to process the policy purchase", null));
+        }
+           return res.status(200).json(new ApiResponse(200,{success:true},"Your data has been sent successfully "))
+      } catch (error) {
+        return res.status(500).json(new ApiResponse(false, "Server Error", null));
+      }
+
+});
+export const BuyElderPolicy = asynchandler(async (req, res) => {
+    const parsed=ElderlyInsuranceSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return res.status(400).json(new ApiResponse(false,  "Validation failed", null));
+      }
+      try {
+        const {
+    firstName,
+    lastName,
+    email,
+    mobile,
+    insureFor,
+    whatsappNumber,
+    pinCode,
+  } = parsed.data;
+
+  const params = new URLSearchParams();
+    params.append("oid", process.env.OID || "");
+    params.append("retURL", process.env.retURL);
+    params.append("lead_source", "Digital Medium");
+    params.append("source", "App");
+    params.append("Policy", "Application - Elderly Insurance");
     params.append("firstName", firstName);
     params.append("lastName", lastName);
     params.append("insureFor", insureFor);
@@ -248,3 +341,20 @@ export const ReferandEarn = asynchandler(async (req, res) => {
 });
 
 
+export const AddReferral = asynchandler(async(req,res)=>{
+  try {
+    const parsed=addReferralSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json(new ApiResponse(400,{}, "Validation failed",));
+    }
+    const {source, referralCode, referrerNumber, referredNumber, relation, referralName}=parsed.data;
+
+    const refferalresponse= await bimapi.post("/referralAPI",{source, referralCode, referrerNumber, referredNumber, relation, referralName,timestamp:new Date().toISOString().split('.')[0] + 'Z'});
+    if(!refferalresponse.data.success){
+      return res.status(400).json(new ApiResponse(400,{}, refferalresponse.data.message || "Failed to add referral"));
+    }
+      return res.status(200).json(new ApiResponse(200,{}, "Referral added successfully"));
+  } catch (error) {
+    return res.status(500).json(new ApiResponse(500,{}, error.message || "Internal server error"));
+  }
+});

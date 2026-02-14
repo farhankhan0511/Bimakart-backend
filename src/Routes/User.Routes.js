@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getUserDetails, updateUserDetails } from "../Controllers/User.Controller.js";
-import { getUserPolicies, UploadPolicy } from "../Controllers/Policy.Controller.js";
+import { getUserPolicies, removeuploadedpolicy, UploadPolicy } from "../Controllers/Policy.Controller.js";
 import { upload } from "../Middlewares/upload.middleware.js";
 import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
@@ -188,7 +188,48 @@ router.post("/policydata", verifyJWT, getUserPolicies);
  *       500:
  *         description: Error during upload or policy extraction
  */
-router.post("/uploadpolicy",verifyJWT,upload.single("newpolicy"),UploadPolicy)
+router.post("/uploadpolicy",verifyJWT,upload.single("newpolicy"),UploadPolicy);
+
+
+/**
+ * @openapi
+ * /api/user/removepolicy:
+ *   post:
+ *     summary: Remove a policy document
+ *     description: Removes a user's uploaded policy by setting its visibility to hidden (0).
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - mobile
+ *               - policyNumber
+ *             properties:
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
+ *               policyNumber:
+ *                 type: string
+ *                 example: "POL123456"
+ *     responses:
+ *       200:
+ *         description: Policy removed successfully
+ *       400:
+ *         description: Mobile and Policy Number are required
+ *       404:
+ *         description: No policies found or Policy not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/removepolicy",verifyJWT,removeuploadedpolicy);
+
+
 
 
 

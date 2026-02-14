@@ -19,6 +19,25 @@ export const adminsignupSchema = z.object({
 });
 
 
+export const referralSchema = z.object({
+  referralMobile: z
+    .string()
+    .regex(/^[1-9]\d{9}$/, "Invalid referral mobile number")
+    .optional(),
+
+  referralCode: z
+    .string()
+    .min(3, "Referral code too short")
+    .max(50)
+    .optional(),
+
+  bimaCoins: z
+    .number()
+    .min(0, "Coins cannot be negative"),
+
+  transactionType: z.enum(["Credit", "Debit"])
+});
+
 
 export const updatesSchema = z.object({
   mobile: z.string().regex(/^[1-9]\d{9}$/, "Invalid mobile number").min(10, "Mobile number must be at least 10 digits").max(10, "Mobile number must be at most 10 digits").optional(),
@@ -214,6 +233,80 @@ export const HealthInsuranceSchema = z.object({
     .regex(/^[1-9][0-9]{5}$/, "Invalid Indian pin code")
     .optional(),
 });
+export const LifeInsuranceSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, "First name too short")
+    .max(40),
+    
+    lastName: z
+    .string()
+    .min(2, "Last name too short")
+    .max(80),
+    
+    email: z
+      .email("Invalid email address"),
+  
+    mobile: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
+    insureFor: z.enum([
+    "Self",
+    "Spouse",
+    "Son",
+    "Daughter",
+    "Father",
+    "Mother",
+  ]),
+
+
+  whatsappNumber: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Invalid WhatsApp number")
+    .optional(),
+
+  pinCode: z
+    .string()
+    .regex(/^[1-9][0-9]{5}$/, "Invalid Indian pin code")
+    .optional(),
+});
+export const ElderlyInsuranceSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, "First name too short")
+    .max(40),
+    
+    lastName: z
+    .string()
+    .min(2, "Last name too short")
+    .max(80),
+    
+    email: z
+      .email("Invalid email address"),
+  
+    mobile: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number"),
+    insureFor: z.enum([
+    "Self",
+    "Spouse",
+    "Son",
+    "Daughter",
+    "Father",
+    "Mother",
+  ]),
+
+
+  whatsappNumber: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Invalid WhatsApp number")
+    .optional(),
+
+  pinCode: z
+    .string()
+    .regex(/^[1-9][0-9]{5}$/, "Invalid Indian pin code")
+    .optional(),
+});
 
 
 
@@ -279,4 +372,14 @@ export const sendFilteredNotificationSchema = z.object({
   occupation: z.string().min(1).optional(),
   interests: z.array(z.string().min(1)).optional(),
   
+});
+
+
+export const addReferralSchema = z.object({
+  source: z.string().min(1),
+  referralCode: z.string().min(3),
+  referrerNumber: z.string().regex(/^[0-9]{10,15}$/, "Invalid referrer number"),
+  referredNumber: z.string().regex(/^[0-9]{10,15}$/, "Invalid referred number"),
+  relation: z.string().min(2),
+  referralName: z.string().min(2)
 });

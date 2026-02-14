@@ -5,6 +5,7 @@ import { ApiResponse } from "../Utils/ApiResponse.js";
 import { authtokens } from "../Models/Auth.Model.js";
 import jwt from "jsonwebtoken"
 import admin from "../Utils/firebase.js";
+import { getcoinSetting } from "../Lib/coinSettingCache.js";
 
 
 const normalize = (num) => num?.toString().replace(/\D/g, "").slice(-10);
@@ -51,15 +52,21 @@ export const checkMobileExist=asynchandler(async(req,res,next)=>{
 // Sign up and create an user account on the salesforce db
 export const SignupUser=asynchandler(async(req,res,next)=>{
     try {
-        const {mobile,name,source,password}=req.body;
+        const {mobile,name,source,password,referralCode}=req.body;
         if (!!!signupSchema.safeParse({mobile,name,source,password}).success) {
             return  res.status(400).json(new ApiResponse(400,{},"Invalid signup data"));
         }
+        let response;
+        if (!referralCode) {
+        response=await bimapi.post("/accountSignupUser",{mobile,name,source,password});
        
-        const response=await bimapi.post("/accountSignupUser",{mobile,name,source,password});
-        if (response.data.success ===null) {
-            return res.status(400).json(new ApiResponse(400,{},response.data.message || "Mobile already exists"));
-        } 
+    }    else{
+            const signupBimaCoins=Number(getcoinSetting("signup_bonus_coins"))|| 0;
+        response=await bimapi.post("/accountSignupUser",{mobile,name,source,password,referralCode,bimaCoins:signupBimaCoins}); 
+    }
+    if (response.data.success ===null) {
+        return res.status(400).json(new ApiResponse(400,{},response.data.message || "Mobile already exists or Invalid referral code"));
+    }
         await authtokens.findOneAndUpdate(
         { mobile },
         {},
@@ -92,17 +99,15 @@ export const VerifyPassword=asynchandler(async(req,res,next)=>{
             return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number format"));
         }
         const response=await bimapi.post("/verifyPasswordAccount",{mobile,encryptedPassword});
+      
+        if(!response.data.valid){
+            return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number or Wrong password"));
+        }
         await authtokens.findOneAndUpdate(
             { mobile },
             {},
             { upsert: true, new: true }
             );
-
-        
-      
-        if(!response.data.valid){
-            return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number or Wrong password"));
-        }
         const {accessToken,refreshToken}= await generateAccessAndRefreshToken(mobile) 
         return res.status(200).json(new ApiResponse(200,{data:response.data,accessToken:accessToken,refreshToken:refreshToken},"Password verification successful"));
         

@@ -302,12 +302,16 @@ async function getPoliciesfrombasecodeApi(mobile){
   for (let i = 0; i < policies.length; i++) {
     const base64 = policies[i]["pdf"];
     if (!base64) continue;
+    const cleanBase64 = base64.replace(/^data:.*;base64,/, "");
 
-    const filename = `policy_${mobile}_${i + 1}.txt`;
+    const buffer = Buffer.from(cleanBase64, "base64");
+    let policystype=policies[i]["policyType"] || "Other";
+    let policyvisibility=policies[i]["visibility"] || "1";
+    const filename = `base64_${mobile}_${i + 1}_${policystype}_${policyvisibility}.pdf`;
     const filePath = path.join(DOWNLOAD_DIR, filename);
 
     await withRetry(() => {
-      return fs.promises.writeFile(filePath, base64, "utf8");
+     return  fs.promises.writeFile(filePath, buffer)
     }, 2, 1500);
 
     savedFiles.push(path.relative(process.cwd(), filePath));
@@ -329,6 +333,7 @@ const getpolicyanalysis=async(Policypath)=>{
     
         const form = new FormData();
         form.append("file", fs.createReadStream(Policypath));
+        logger.info(process.env.PolicyHawaldarURL,"Sending policy for analysis to Hawaldar:");
             const response = await axios.post(
             `${process.env.PolicyHawaldarURL}/api/v1/conversation`,
             form,
@@ -341,10 +346,6 @@ const getpolicyanalysis=async(Policypath)=>{
         return response.data;
     }
   
-
-
-
-
 
 export async function extractPolicyDetailsFromFile(filePath) {
   if (!filePath) throw new Error("File path is required");
@@ -408,7 +409,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
           );
         }
         const existingRecord=await UserPolicies.findOne({mobile});
-        if (existingRecord && (existingRecord?.uploadedpolicy?.length>0 ||existingRecord?.policies?.length > 0) && !refresh) {
+        if (existingRecord && (existingRecord?.policies?.length > 0) && !refresh) {
            
             return res.status(200).json(new ApiResponse(200,{source:"cache",data:existingRecord},"User policies retrieved successfully from cache"));
         }
@@ -449,8 +450,10 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
 
                 if (policyDetails) {
                     policyDetails.policyAnalysis=policyanalysis;
-                    policyDetails.source = filePath.endsWith(".txt") ? "basecode" : "url";
+                    const filename = path.basename(filePath, ".pdf");
+                    policyDetails.source = filename.startsWith("base64") ? "basecode" : "url";
                    if (policyDetails?.source === "url") {
+                        policyDetails.policyType="Salesforce";
                         for (const key of POLICY_KEYS) {
                           const policy = policyDetails?.[key];
                           if (!policy) continue;
@@ -467,6 +470,17 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                           }
                         }
                       }
+                    else{
+                      // get policy type and visibility from filename for basecode policies as they are not coming in response
+                      
+                      const parts = filename.split("_");
+                      if (parts.length >= 5) {
+                        const policystype = parts[3];
+                        const policyvisibility = parts[4];
+                        policyDetails.policyType = policystype;
+                        policyDetails.visibility = policyvisibility;
+                      }
+                    }
 
                    
                     allPolicies.push(policyDetails);
@@ -532,16 +546,21 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
 
 export const UploadPolicy=asynchandler(async(req,res,)=>{
   const Policypath=req.file?.path;
-
-  const {mobile}=req.body;
+  const policyFileName=req.file?.filename;
+  const {mobile,policyType}=req.body;
   try {
    
-    if(!checkMobileExistsSchema.safeParse({mobile}).success){
-      return res.status(400).json(new ApiResponse(400,{},"Invalid mobile format"))
-    }
+    if (!mobile) {
+            return res.status(400).json(new ApiResponse(400,{},"Mobile number is required"));
+        }
+        if (!checkMobileExistsSchema.safeParse({mobile}).success) {
+            return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number format"));
+        }
     if(!Policypath){
       return res.status(404).json(new ApiResponse(404,{},"Policy not found"))
     }
+    if (!["Myself", "Other"].includes(policyType)) {
+      return res.status(400).json(new ApiResponse(400,{},"Policy type is required")) }
 
     const newPolicy= await uploadPdfToS3(Policypath,req.file?.filename); 
 
@@ -555,11 +574,7 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
               let policyanalysis = null;
               let extractedPolicy = null;
 
-                try {
-                  policyanalysis = await getpolicyanalysis(Policypath);
-                } catch (e) {
-                  logger.warn(`Policy analysis failed for ${Policypath}: ${e.message}`);
-                }
+               
 
                 try {
                   extractedPolicy = await extractPolicyDetailsFromFile(Policypath)
@@ -567,45 +582,193 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
                   logger.warn(`Policy extraction failed for ${Policypath}: ${e.message}`);
                 }
 
-     extractedPolicy.url=newPolicy;
-     extractedPolicy.policyAnalysis=policyanalysis;
-    if (!extractedPolicy){
+    //  extractedPolicy.url=newPolicy;
+    if(!extractedPolicy){
+      deletePdfFromS3ByUrl(newPolicy);
       return res.status(500).json(new ApiResponse(500,{},"Error while extracting the policy"))
     }
-    const existingRecord=await UserPolicies.findOne({mobile})
+     
+     extractedPolicy.policyType=policyType;
+    extractedPolicy.visibility="1"; 
 
-    if(existingRecord){
-    const updatedPolicy= await UserPolicies.findOneAndUpdate({ mobile ,"uploadedpolicy.id": { $ne: extractedPolicy.id }},
-            {
-                $push: {
-                    uploadedpolicy: extractedPolicy                 
-                }
-            },
-           { returnDocument: "after" }
-        ); 
-      
-      if(updatedPolicy === null){
-        await deletePdfFromS3ByUrl(newPolicy);
-        
-        return res.status(400).json(new ApiResponse(400,{},"Policy already Exists"))
+  const duplicateActive = await UserPolicies.findOne({
+        mobile,
+        policies: {
+          $elemMatch: {
+            id: extractedPolicy.id,
+            source: "basecode",
+            visibility: "1"
+          }
+        }
+      });
+
+
+      if (duplicateActive) {
+        return res
+          .status(409)
+          .json(new ApiResponse(409, {}, "Policy already exists"));
       }
-        return res.status(200).json(new ApiResponse(200,{extractedPolicy},"Policy added successfully")) 
-      }
-    else{
-      await UserPolicies.create({mobile,uploadedpolicy:extractedPolicy})
-      return res.status(200).json(new ApiResponse(200,extractedPolicy,"Policy added successfully"))
+
+
+     if(extractedPolicy.motorInsurancePolicy){
+      try {
+        await webleadTOSurepassexternalPolicy(mobile,extractedPolicy.motorInsurancePolicy.vehicleNumber,extractedPolicy.motorInsurancePolicy.customerName,extractedPolicy.motorInsurancePolicy.policyEndDate);    
+      } catch (err) {
+        logger.error("Failed to create weblead for surepass:", err);
+      } 
     }
-      
+    const updateResult = await UserPolicies.updateOne(
+    { mobile, policies: {
+      $elemMatch: {
+        id: extractedPolicy.id,
+        visibility: "0"
+      }
+    } },
+    { $set: { "policies.$.visibility": "1" } },
+  );
+
+  if (updateResult.matchedCount > 0) {
+    try {
+    await bimapi.patch("/policiesPDFs", {
+      policyNumber: extractedPolicy.id,
+      mobile: mobile,
+      visibility: "1"
+    });
+  } catch (err) {
+    logger.warn("Basecode restore failed but DB updated:", err.message);
+  }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, extractedPolicy, "Policy restored successfully"));
+  }
+    
+    const uploadstatusresponse= await bimapi.post("/uploadPolicyPDF",
+          {
+            policyNumber:extractedPolicy.id,
+  mobileNumber: mobile,
+  policyType: policyType,
+  fileName: policyFileName,
+  policyDocumentUrl: newPolicy
+          }
+        );
+        const uploadstatus=uploadstatusresponse.data.success;
+        if(uploadstatus !== true){
+          logger.warn(uploadstatusresponse.data.message,"Failed to upload policy to basecode:");
+          
+          deletePdfFromS3ByUrl(newPolicy);
+           return res.status(500).json(new ApiResponse(500,{},uploadstatusresponse.data.message || "Error while uploading the policy to basecode"))
+        }
+    try {
+    policyanalysis = await getpolicyanalysis(Policypath);
+        } catch (e) {
+        logger.warn(`Policy analysis failed for ${Policypath}: ${e.message}`);
+          }
+     extractedPolicy.policyAnalysis=policyanalysis;
+  try { 
+  await UserPolicies.updateOne(
+    { mobile },
+    { $push: { policies: extractedPolicy } },
+    { upsert: true }
+  );
+
+} catch (error) {
+  logger.error("Error while saving policy:", error);
+  return res
+    .status(500)
+    .json(new ApiResponse(500, {}, "Internal Server Error"));
+}
+
+
+      return res.status(200).json(new ApiResponse(200,extractedPolicy,"Policy added successfully"))
+}  
+  
 
     
-  } catch (error) {
+   catch (error) {
     logger.error("Error in UploadPolicy:", error);
     res.status(500).json(new ApiResponse(500,{},"Internal Server Error"))
   }
   finally{
     if(fs.existsSync(Policypath)){
-      fs.unlinkSync(Policypath)
+       fs.unlinkSync(Policypath);
     }
+    
   }
 
+})
+
+
+async function webleadTOSurepassexternalPolicy(mobile,rc_number,name,expiryDate){
+  const params = new URLSearchParams();
+      params.append("oid", process.env.OID || "");
+      params.append("retURL", process.env.retURL);
+      params.append("lead_source", "Digital Medium");
+      params.append("source", "App");
+      params.append("Policy", "Application - External Motor Policy");
+      params.append("policyUploader",mobile);
+      params.append("rc_number",rc_number); 
+      params.append("customer_name",name);
+      params.append("policy_expiry_date",expiryDate);
+  
+      
+     
+  
+      const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+        responseType: "html",
+      });
+          if (response.status !== 200) {
+            throw new Error(`Failed to create weblead: ${response.status} ${response.statusText}`);
+          }
+          logger.info("Weblead created successfully for surepass external policy");
+           
+};
+
+
+export const removeuploadedpolicy = asynchandler(async(req,res)=>{
+  const {mobile,policyNumber}=req.body;
+  try {
+    if(!mobile || !policyNumber){
+      return res.status(400).json(new ApiResponse(400,{},"Mobile and Policy Number are required"))
+    }
+    if(!checkMobileExistsSchema.safeParse({mobile}).success){
+      return res.status(400).json(new ApiResponse(400,{},"Invalid mobile format"))
+    }
+    const existingRecord=await UserPolicies.findOne({mobile});
+    if(!existingRecord){
+      return res.status(404).json(new ApiResponse(404,{},"No policies found for this mobile number"))
+    }
+    const policiesArray=existingRecord.policies || [];
+    const policyToRemove=policiesArray.find(p=>p.id === policyNumber);
+    if(!policyToRemove){
+      return res.status(404).json(new ApiResponse(404,{},"Policy not found"))
+    }
+    const removestatus= await bimapi.patch("/policiesPDFs",{
+      policyNumber:policyNumber,
+      mobile:mobile,
+      visibility:"0"
+    });
+    if (removestatus.data.success !== true) {
+      return res.status(500).json(new ApiResponse(500,{},removestatus.data.message || "Error while removing the policy from basecode"))
+    }
+    
+   UserPolicies.updateOne(
+  { mobile, "policies.id": policyNumber },
+  {
+    $set: { "policies.$.visibility": "0" }
+  }
+).catch(err => {
+  logger.error("Visibility update failed:", err);
+});
+
+
+    return res.status(200).json(new ApiResponse(200,{},"Policy removed successfully"))
+
+    } catch (error) {
+    logger.error("Error in removeuploadedpolicy:", error);
+    res.status(500).json(new ApiResponse(500,{},"Internal Server Error"))
+  }
 })
