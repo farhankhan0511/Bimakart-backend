@@ -355,6 +355,9 @@ const getpolicyanalysis=async(Policypath)=>{
                 timeout: 70000, // 70 seconds timeout for analysis
             }
             );
+        if (response.status !== 200) {
+            throw new Error(`Policy analysis failed: ${response.statusText}`);
+        }
         return response.data;
     }
   
