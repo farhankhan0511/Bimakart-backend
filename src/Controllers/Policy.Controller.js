@@ -302,9 +302,19 @@ async function getPoliciesfrombasecodeApi(mobile){
   for (let i = 0; i < policies.length; i++) {
     const base64 = policies[i]["pdf"];
     if (!base64) continue;
-    const cleanBase64 = base64.replace(/^data:.*;base64,/, "");
+    let cleanBase64 = base64.replace(/^data:.*;base64,/, "");
+    cleanBase64 = cleanBase64.replace(/[\r\n\s]/g, '');
 
     const buffer = Buffer.from(cleanBase64, "base64");
+    if (buffer.length === 0) {
+      logger.warn(`Empty base64 PDF for policy ${i + 1}`);
+      continue;
+    }
+    const pdfHeader = buffer.slice(0, 4).toString();
+    if (!pdfHeader.includes('%PDF')) {
+      logger.warn(`Invalid PDF format for policy ${i + 1}, header: ${pdfHeader}`);
+      continue;
+    }
     let policystype=policies[i]["policyType"] || "Other";
     let policyvisibility=policies[i]["visibility"] || "1";
     const filename = `base64_${mobile}_${i + 1}_${policystype}_${policyvisibility}.pdf`;
@@ -340,7 +350,9 @@ const getpolicyanalysis=async(Policypath)=>{
             {
                 headers: {
                 ...form.getHeaders(), 
+
                 },
+                timeout: 70000, // 70 seconds timeout for analysis
             }
             );
         return response.data;
@@ -373,8 +385,15 @@ export async function extractPolicyDetailsFromFile(filePath) {
           
           maxBodyLength: Infinity,
           maxContentLength: Infinity,
+          timeout: 60000, // 60 seconds timeout for OCR processing
         }
       );
+      if (response.status=== 503){
+        throw new Error("OCR service is currently unavailable");
+      }
+      if (response.status !== 200) {
+        throw new Error(`OCR service error: ${response.statusText}`);
+      }
 
       return response.data;
     },
@@ -431,24 +450,30 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
         const allPolicies = [];
         for (const filePath of savedFiles) {
             try {
+              const [detailsResult, analysisResult] = await Promise.allSettled([
+                extractPolicyDetailsFromFile(filePath),
+                getpolicyanalysis(filePath)
+              ]);
                 let policyanalysis = null;
                 let policyDetails = null;
 
-                 try {
-                  policyDetails = await extractPolicyDetailsFromFile(filePath);
-                } catch (e) {
-                  logger.warn(`Policy extraction failed for ${filePath}: ${e.message}`);
+                 if (detailsResult.status === 'fulfilled') {
+                  policyDetails = detailsResult.value;
+                } else {
+                  logger.warn(`Extraction failed for ${filePath}: ${detailsResult.reason?.message}`);
                 }
 
-                try {
-                  policyanalysis = await getpolicyanalysis(filePath);
-                } catch (e) {
-                  logger.warn(`Policy analysis failed for ${filePath}: ${e.message}`);
+                if (analysisResult.status === 'fulfilled') {
+                  policyanalysis = analysisResult.value;
+                } else {
+                  logger.warn(`Analysis failed for ${filePath}: ${analysisResult.reason?.message}`);
                 }
 
+                if (!policyDetails) {
+                  continue; // Skip this policy, move to next
+                }
                
 
-                if (policyDetails) {
                     policyDetails.policyAnalysis=policyanalysis;
                     const filename = path.basename(filePath, ".pdf");
                     policyDetails.source = filename.startsWith("base64") ? "basecode" : "url";
@@ -484,7 +509,7 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
 
                    
                     allPolicies.push(policyDetails);
-                }
+                
             } catch (err) {
 
                 logger.error(
