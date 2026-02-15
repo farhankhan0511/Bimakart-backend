@@ -1,6 +1,6 @@
 import axios from "axios";
 import { asynchandler } from "../Utils/asynchandler.js";
-import { addReferralSchema, ElderlyInsuranceSchema, HealthInsuranceSchema, LifeInsuranceSchema, MotorPolicySchema, PlanSchema, ReferandEarnSchema, RudrakshSchema } from "../Utils/zodschemas.js";
+import { addReferralSchema, ElderlyInsuranceSchema, HealthInsuranceSchema, LifeInsuranceSchema, MotorPolicySchema, PlanSchema, PolicyRenewalSchema, ReferandEarnSchema, RudrakshSchema } from "../Utils/zodschemas.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { success } from "zod";
 import bimapi from "../Lib/AxiosClient.js";
@@ -358,3 +358,71 @@ export const AddReferral = asynchandler(async(req,res)=>{
     return res.status(500).json(new ApiResponse(500,{}, error.message || "Internal server error"));
   }
 });
+
+
+export const policyRenewal = asynchandler(async (req, res) => {
+
+  const parsed = PolicyRenewalSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400,{}, "Validation failed"));
+  }
+
+  try {
+    const {
+      FirstName,
+      LastName,
+      MobilePhone,
+      Policy_Category,
+      Policy_Type,
+      Bimacoins_Redeemed,
+      Total_Discount,
+      
+    } = parsed.data;
+
+    const params = new URLSearchParams();
+
+    
+    params.append("oid", process.env.OID || "");
+    params.append("retURL", process.env.retURL || "");
+
+    // Lead fields
+    params.append("first_name", FirstName);
+    params.append("last_name", LastName);
+    params.append("mobile", MobilePhone);
+    params.append("lead_source", "Digital Medium");
+    params.append("source", "App")
+    params.append("Policy_Category", Policy_Category); 
+    params.append("Policy_Type", Policy_Type);     
+    params.append("Bimacoins_Redeemed", Bimacoins_Redeemed?.toString() || "0");
+    params.append("Total_Discount", Total_Discount?.toString() || "0");
+    params.append("Time_Stamp", new Date().toISOString());
+
+    const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      responseType: "html",
+    });
+
+    if (response.status !== 200) {
+      return res
+        .status(502)
+        .json(new ApiResponse(502,{}, "Failed to process the request"));
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { success: true }, "Your data has been sent successfully"));
+
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500,{},"Internal Server Error"));
+  }
+
+});
+

@@ -383,3 +383,43 @@ export const addReferralSchema = z.object({
   relation: z.string().min(2),
   referralName: z.string().min(2)
 });
+
+
+
+export const PolicyRenewalSchema = z.object({
+  FirstName: z
+    .string()
+    .min(1, "First name is required")
+    .max(40),
+
+  LastName: z
+    .string()
+    .min(1, "Last name is required")
+    .max(80),
+
+  MobilePhone: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
+
+  Company: z
+    .string()
+    .min(1)
+    .default("Bimakart Web Lead"),
+
+  Policy_Category: z.enum([
+    "NEW_POLICY",
+    "POLICY_RENEWAL"
+  ]),
+
+  Policy_Type: z.enum([
+    "VEHICLE",
+    "LIFE",
+    "HEALTH",
+    "PA",
+    "OTHER"
+  ]),
+
+ Bimacoins_Redeemed: z.coerce.number().optional(),
+Total_Discount: z.coerce.number().optional(),
+
+});

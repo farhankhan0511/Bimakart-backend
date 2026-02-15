@@ -2,7 +2,7 @@ import { Router } from "express";
 
 const router = Router();
 
-import { AddReferral, BuyElderPolicy, BuyHealthPolicy, BuyLifePolicy, BuyMemebershipPlan, BuyMotorPolicy, BuyRudrakshPolicy, ReferandEarn } from "../Controllers/PurchasePolicy.Controller.js";
+import { AddReferral, BuyElderPolicy, BuyHealthPolicy, BuyLifePolicy, BuyMemebershipPlan, BuyMotorPolicy, BuyRudrakshPolicy, policyRenewal, ReferandEarn } from "../Controllers/PurchasePolicy.Controller.js";
 import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
 /**
@@ -450,7 +450,71 @@ router.post("/referandearn", verifyJWT, ReferandEarn);
  *       500:
  *         description: Internal server error
  */
-router.post("/addreferral",verifyJWT,AddReferral)
+router.post("/addreferral", verifyJWT, AddReferral);
+
+
+/**
+ * @openapi
+ * /api/purchase/policyrenewal:
+ *   post:
+ *     summary: Renew an existing insurance policy
+ *     description: Submits a policy renewal request with policy and contact details.
+ *     tags:
+ *       - Purchase
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - FirstName
+ *               - LastName
+ *               - MobilePhone
+ *               - Policy_Category
+ *               - Policy_Type
+ *             properties:
+ *               FirstName:
+ *                 type: string
+ *                 example: "Raj"
+ *               LastName:
+ *                 type: string
+ *                 example: "Kumar"
+ *               MobilePhone:
+ *                 type: string
+ *                 example: "9876543210"
+ *               Policy_Category:
+ *                 type: string
+ *                 enum:
+ *                   - NEW_POLICY
+ *                   - POLICY_RENEWAL
+ *                 example: "POLICY_RENEWAL"
+ *               Policy_Type:
+ *                 type: string
+ *                 enum:
+ *                   - VEHICLE
+ *                   - LIFE
+ *                   - HEALTH
+ *                   - PA
+ *                   - OTHER
+ *                 example: "VEHICLE"
+ *               Bimacoins_Redeemed:
+ *                 type: number
+ *                 example: 100
+ *               Total_Discount:
+ *                 type: number
+ *                 example: 500
+ *     responses:
+ *       200:
+ *         description: Policy renewal data submitted successfully
+ *       400:
+ *         description: Validation failed
+ *       500:
+ *         description: Server error
+ */
+router.post("/policyrenewal", verifyJWT, policyRenewal);
 
 
 export default router;

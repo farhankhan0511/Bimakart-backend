@@ -14,6 +14,10 @@ export async function withRetry(fn, options = {}) {
     try {
       return await fn();
     } catch (err) {
+      if (isQuotaError(err)) {
+        // fail fast
+        throw new Error("provider_quota_exhausted");
+      }
       lastError = err;
       attempt++;
 
@@ -33,17 +37,15 @@ export async function withRetry(fn, options = {}) {
 }
 
 
-export function isRetryableError(err) {
-  if (!err) return false;
 
-  // Axios network error
-  if (!err.response) return true;
 
-  const status = err.response.status;
+function isQuotaError(err) {
+  const msg = err?.response?.data?.error?.message || "";
 
   return (
-    status >= 500 ||
-    status === 408 ||
-    status === 429
+    err?.response?.status === 429 ||
+    err?.response?.status === 503 ||
+    msg.includes("quota") ||
+    msg.includes("insufficient")
   );
 }

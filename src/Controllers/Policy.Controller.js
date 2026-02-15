@@ -15,6 +15,7 @@ import pLimit from "p-limit";
 import { deletePdfFromS3ByUrl, uploadPdfToS3 } from "../Utils/FileUpload.js";
 import mongoose from "mongoose";
 import logger from "../Utils/logger.js";
+import { isAnalysisDown, isOCRDown, markAnalysisDown, markOCRDown } from "../Lib/Providerhealth.js";
 
 const LOCK_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -332,6 +333,10 @@ async function getPoliciesfrombasecodeApi(mobile){
 
 // policy hawaldar function
 const getpolicyanalysis=async(Policypath)=>{
+  if(isAnalysisDown()){
+    logger.warn("Policy analysis service is marked down, skipping analysis for file:", Policypath);
+    throw new Error("Policy analysis service is currently unavailable");
+  }
     if (!Policypath) throw new Error("File path is required");
 
     const absolutePath = path.isAbsolute(Policypath)
@@ -341,28 +346,43 @@ const getpolicyanalysis=async(Policypath)=>{
       throw new Error("File does not exist");
     }
     
-        const form = new FormData();
-        form.append("file", fs.createReadStream(Policypath));
-        logger.info(process.env.PolicyHawaldarURL,"Sending policy for analysis to Hawaldar:");
-            const response = await axios.post(
-            `${process.env.PolicyHawaldarURL}/api/v1/conversation`,
-            form,
-            {
-                headers: {
-                ...form.getHeaders(), 
+        try {
+          const form = new FormData();
+          form.append("file", fs.createReadStream(Policypath));
+          logger.info(process.env.PolicyHawaldarURL,"Sending policy for analysis to Hawaldar:");
+              const response = await axios.post(
+              `${process.env.PolicyHawaldarURL}/api/v1/conversation`,
+              form,
+              {
+                  headers: {
+                  ...form.getHeaders(), 
+  
+                  },
+                  timeout: 70000, // 70 seconds timeout for analysis
+              }
+              );
+              return response.data;
+        } catch (err) {
+          if (
+      err.response?.status === 503 ||
+      err.response?.status === 429 ||
+      err.code === "ECONNABORTED"
+    ) {
+      logger.warn("Analysis service unhealthy, opening circuit");
+      markAnalysisDown();
+    }
 
-                },
-                timeout: 70000, // 70 seconds timeout for analysis
-            }
-            );
-        if (response.status !== 200) {
-            throw new Error(`Policy analysis failed: ${response.statusText}`);
+    logger.warn("Policy analysis failed:", err.message);
+    throw err; 
         }
-        return response.data;
     }
   
 
 export async function extractPolicyDetailsFromFile(filePath) {
+  if(isOCRDown()){
+    logger.warn("OCR service is marked down, skipping OCR for file:", filePath);
+    throw new Error("OCR service is currently unavailable");
+  }
   if (!filePath) throw new Error("File path is required");
 
   const absolutePath = path.isAbsolute(filePath)
@@ -378,29 +398,39 @@ export async function extractPolicyDetailsFromFile(filePath) {
 
   return withRetry(
     async () => {
-      const response = await axios.post(
-        process.env.OCR_SERVICE_URL,
-        form,
-        {
-          headers: {
-            ...form.getHeaders(),
-          },
-          
-          maxBodyLength: Infinity,
-          maxContentLength: Infinity,
-          timeout: 60000, // 60 seconds timeout for OCR processing
+      try {
+        const response = await axios.post(
+          process.env.OCR_SERVICE_URL,
+          form,
+          {
+            headers: {
+              ...form.getHeaders(),
+            },
+            
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity,
+            timeout: 60000, // 60 seconds timeout for OCR processing
+          }
+        );
+        
+  
+        return response.data;
+      } catch (err) {
+        if (
+          err.response?.status === 503 ||
+          err.response?.status === 429 ||
+          err.code === "ECONNABORTED"
+        ) {
+          logger.warn("OCR service unhealthy, opening circuit");
+          markOCRDown();
         }
-      );
-      if (response.status=== 503){
-        throw new Error("OCR service is currently unavailable");
-      }
-      if (response.status !== 200) {
-        throw new Error(`OCR service error: ${response.statusText}`);
-      }
 
-      return response.data;
+        logger.warn("OCR extraction failed:", err.message);
+        throw err;
+        
+      }
     },
-    { retries: 2, delay: 1500, label: "OCR-REQUEST" }
+    { retries: 1, delay: 1500, label: "OCR-REQUEST" }
   );
 }
 
@@ -413,7 +443,9 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
     let lockInfo = { acquired: false, lockId: null };
 
     let savedFiles = [];
+    let basecodeFiles=[];
     try {
+      
         if (!mobile) {
             return res.status(400).json(new ApiResponse(400,{},"Mobile number is required"));
         }
@@ -424,26 +456,37 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
             return res.status(400).json(new ApiResponse(400,{},"Refresh must be a boolean"));
         }
         
+        
+        const existingRecord=await UserPolicies.findOne({mobile});
+        if (existingRecord && (existingRecord?.policies?.length > 0) && !refresh) {
+           
+            return res.status(200).json(new ApiResponse(200,{source:"cache",data:existingRecord},"User policies retrieved successfully from cache"));
+        }
+        if(isOCRDown()){
+                logger.warn("OCR service is marked down");
+                return res.status(200).json(new ApiResponse(200,{source:"cache",data:(existingRecord?existingRecord:{})},"Service unavailable returning cached data"))
+              }
+
         lockInfo = await acquireLock(mobile);
         if (!lockInfo.acquired) {
           return res.status(409).json(
             new ApiResponse(409, {}, "Policy retrieval already in progress")
           );
         }
-        const existingRecord=await UserPolicies.findOne({mobile});
-        if (existingRecord && (existingRecord?.policies?.length > 0) && !refresh) {
-           
-            return res.status(200).json(new ApiResponse(200,{source:"cache",data:existingRecord},"User policies retrieved successfully from cache"));
-        }
-
         
         logger.info({mobile},"Lock acquired for mobile:");
         // As now that the lock is acquired it means no redundant process and hence safe to start
-        // firstly getting policies from api which gives uls
-        savedFiles = await getPoliciesfromURLApi(mobile);
-        
-        // now getting policies from basecode api
-        const basecodeFiles = await getPoliciesfrombasecodeApi(mobile);
+        // firstly getting policies from api which gives urls
+
+        const [urlFiles, baseFiles] = await Promise.allSettled([getPoliciesfromURLApi(mobile), getPoliciesfrombasecodeApi(mobile)]);
+        if (urlFiles.status === 'rejected') {
+          logger.warn("Failed to get policies from URL API:", urlFiles.reason?.message);
+        }
+        if (baseFiles.status === 'rejected') {
+          logger.warn("Failed to get policies from basecode API:", baseFiles.reason?.message);
+        }
+        savedFiles = urlFiles.status === 'fulfilled' ? urlFiles.value : [];
+        basecodeFiles = baseFiles.status === 'fulfilled' ? baseFiles.value : [];
         
 
         savedFiles = savedFiles.concat(basecodeFiles);
@@ -451,12 +494,19 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
 
         // Now running the ocr service on each file to extract policy details
         const allPolicies = [];
-        for (const filePath of savedFiles) {
+        for (const filePath of savedFiles) {          
             try {
-              const [detailsResult, analysisResult] = await Promise.allSettled([
-                extractPolicyDetailsFromFile(filePath),
-                getpolicyanalysis(filePath)
-              ]);
+              const tasks = [
+                extractPolicyDetailsFromFile(filePath)
+              ];
+
+              if (!isAnalysisDown()) {
+                tasks.push(getpolicyanalysis(filePath));
+              }
+              const results = await Promise.allSettled(tasks);
+
+              const detailsResult = results[0];
+              const analysisResult = results[1];
                 let policyanalysis = null;
                 let policyDetails = null;
 
@@ -466,16 +516,15 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
                   logger.warn(`Extraction failed for ${filePath}: ${detailsResult.reason?.message}`);
                 }
 
-                if (analysisResult.status === 'fulfilled') {
+                if (!policyDetails) {
+                  continue; // Skip this policy, move to next
+                }
+
+                if (analysisResult && analysisResult.status === 'fulfilled') {
                   policyanalysis = analysisResult.value;
                 } else {
                   logger.warn(`Analysis failed for ${filePath}: ${analysisResult.reason?.message}`);
                 }
-
-                if (!policyDetails) {
-                  continue; // Skip this policy, move to next
-                }
-               
 
                     policyDetails.policyAnalysis=policyanalysis;
                     const filename = path.basename(filePath, ".pdf");
@@ -523,11 +572,12 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
 
             }
         }
+        if(isOCRDown()){
+                logger.warn("OCR service is marked down, some policies may not have been processed");
+                return res.status(200).json(new ApiResponse(200,{data:(existingRecord?existingRecord:{})},"Service unavailable returning cached data")) 
+              }
        
         
-       
-        
-        // return res.status(200).json(new ApiResponse(200,{source:"api",data:allPolicies},"User policies retrieved successfully from API"));
         if (existingRecord) {
          const newlyUpdatedRecord = await UserPolicies.findOneAndUpdate(
             { mobile },
@@ -562,7 +612,6 @@ export const getUserPolicies=asynchandler(async(req,res)=>{
     }
     finally {
 
-      // release locks and cleanfiles 
       if (lockInfo.acquired) {
       await releaseLock(mobile, lockInfo.lockId);
     }
@@ -578,17 +627,23 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
   const {mobile,policyType}=req.body;
   try {
    
+    
     if (!mobile) {
             return res.status(400).json(new ApiResponse(400,{},"Mobile number is required"));
         }
         if (!checkMobileExistsSchema.safeParse({mobile}).success) {
             return res.status(400).json(new ApiResponse(400,{},"Invalid mobile number format"));
         }
+      if(isOCRDown()){
+      logger.warn("OCR service is marked down, cannot process upload for mobile:", mobile);
+      return res.status(503).json(new ApiResponse(503,{},"Service unavailable"))
+    }
     if(!Policypath){
       return res.status(404).json(new ApiResponse(404,{},"Policy not found"))
     }
     if (!["Myself", "Other"].includes(policyType)) {
       return res.status(400).json(new ApiResponse(400,{},"Policy type is required")) }
+    
 
     const newPolicy= await uploadPdfToS3(Policypath,req.file?.filename); 
 
@@ -596,6 +651,7 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
     if(!newPolicy ){
       return res.status(500).json(new ApiResponse(500,{},"Error while uploading the Policy"));
     }
+
       
      
 
@@ -687,12 +743,15 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
            return res.status(500).json(new ApiResponse(500,{},uploadstatusresponse.data.message || "Error while uploading the policy to basecode"))
         }
     try {
+      if(!isAnalysisDown()){
     policyanalysis = await getpolicyanalysis(Policypath);
-        } catch (e) {
-        logger.warn(`Policy analysis failed for ${Policypath}: ${e.message}`);
-          }
-     extractedPolicy.policyAnalysis=policyanalysis;
-  try { 
+  }
+} catch (e) {
+  logger.warn(`Policy analysis failed for ${Policypath}: ${e.message}`);
+}
+extractedPolicy.policyAnalysis=policyanalysis;
+
+     try { 
   await UserPolicies.updateOne(
     { mobile },
     { $push: { policies: extractedPolicy } },
