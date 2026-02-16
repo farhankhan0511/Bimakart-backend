@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { uploadimage} from "../Middlewares/upload.middleware.js";
-import { DeleteBanner, getBanners, getLiveBanners, getTutorialVideos, ToggleBannerStatus, UploadBanner } from "../Controllers/Marketing.controller.js";
+import { DeleteBanner, getBanners, getcoinSettings, getLiveBanners, getTutorialVideos, ToggleBannerStatus, updateSetting, updateTutorialVideo, UploadBanner } from "../Controllers/Marketing.controller.js";
 import { verifyAdminJWT } from "../Middlewares/auth.middleware.js";
 
 const router=Router();
@@ -159,5 +159,63 @@ router.patch("/toggle-banner-status",verifyAdminJWT,ToggleBannerStatus);
  *         description: Internal server error
  */
 router.delete("/delete-banner",verifyAdminJWT,DeleteBanner);
+
+
+/**
+ * @openapi
+ * /api/marketing/coin-settings:
+ *   get:
+ *     summary: Get coin settings
+ *     description: Returns all coin settings including key-value pairs.
+ *     tags:
+ *       - Market
+ *     responses:
+ *       200:
+ *         description: Coin settings fetched successfully
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/coin-settings",getcoinSettings)
+
+
+/**
+ * @openapi
+ * /api/marketing/update-coin-setting:
+ *   put:
+ *     summary: Update a coin setting
+ *     description: Updates the value of a specific coin setting by key. Requires admin authentication.
+ *     tags:
+ *       - Market
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - key
+ *               - value
+ *             properties:
+ *               key:
+ *                 type: string
+ *                 example: "coinConversionRate"
+ *               value:
+ *                 type: number
+ *                 example: 100
+ *     responses:
+ *       200:
+ *         description: Setting updated successfully
+ *       400:
+ *         description: Key and value are required
+ *       404:
+ *         description: Setting not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put("/update-coin-setting",verifyAdminJWT,updateSetting);
+
+router.put("/update-tutorial-video",verifyAdminJWT,updateTutorialVideo);
 
 export default router;

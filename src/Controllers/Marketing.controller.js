@@ -4,6 +4,8 @@ import { asynchandler } from "../Utils/asynchandler.js";
 import { deleteImageFromS3, deleteImageFromS3ByUrl, uploadImageToS3} from "../Utils/FileUpload.js";
 import fs from "fs";
 import logger from "../Utils/logger.js";
+import { coinSettings } from "../Models/coinSettings.Model.js";
+import { TutorialVideo } from "../Models/tutorialVideo.Model.js";
 
 export const getLiveBanners=asynchandler(async(req,res)=>{
     try {
@@ -33,11 +35,12 @@ export const getBanners=asynchandler(async(req,res)=>{
 })
 
 export const getTutorialVideos=asynchandler(async(req,res)=>{
-    res.status(200).json(new ApiResponse(200,{
-        "id": 1,
-        "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    try {
+        const videos=await TutorialVideo.find();
+        res.status(200).json(new ApiResponse(200,videos,"Tutorial videos fetched successfully"));
+    } catch (error) {
+        return res.status(500).json(new ApiResponse(500,{},"Internal server error"));
     }
-,"Tutorial videos fetched successfully"))
 });
 
 
@@ -110,3 +113,55 @@ export const DeleteBanner=asynchandler(async(req,res)=>{
         res.status(500).json(new ApiResponse(500,{},"Internal Server Error"))
     }
 });
+
+export const getcoinSettings = asynchandler(async (req, res) => {
+  const settings = await coinSettings.find({});
+    if (!settings || settings.length === 0) {
+        return res.status(404).json(new ApiResponse(404, {}, "Coin settings not found"));
+    }
+    return res.status(200).json(new ApiResponse(200, settings , "Coin settings fetched successfully"));
+});
+
+
+
+export const updateSetting = asynchandler(async (req, res) => {
+  
+  const { key,value } = req.body;
+i
+  try {
+    const setting = await coinSettings.findOne({ key });
+
+    if (!setting) {
+      return res.status(404).json(new ApiResponse(404, {}, "Setting not found"));
+    }
+
+
+    setting.value = value;
+    await setting.save();
+
+    return res.status(200).json(new ApiResponse(200, setting, "Setting updated successfully"));
+
+  } catch (error) {
+    console.error("Update setting error:", error);
+    return res.status(500).json(new ApiResponse(500, {}, "Internal server error"));
+     
+  }
+});
+
+export const updateTutorialVideo = asynchandler(async (req, res) => {
+  const { videoUrl } = req.body;
+    try {
+        if (!videoUrl) {
+            return res.status(400).json(new ApiResponse(400, {}, "Video URL is required"));
+        }
+        if (!/^https?:\/\/.+\..+/.test(videoUrl)) {
+            return res.status(400).json(new ApiResponse(400, {}, "Invalid video URL format"));
+        }
+        const video = await TutorialVideo.findOneAndUpdate({}, { videoUrl }, { new: true, upsert: true });
+            return res.status(200).json(new ApiResponse (200, {video}, "Tutorial video updated successfully"));
+    } catch (error) {
+        console.error("Update tutorial video error:", error);
+        return res.status(500).json(new ApiResponse(500, {}, "Internal server error"));
+    }
+});
+        
