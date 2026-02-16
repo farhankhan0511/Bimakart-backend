@@ -379,9 +379,9 @@ export const addReferralSchema = z.object({
   source: z.string().min(1),
   referralCode: z.string().min(3),
   referrerNumber: z.string().regex(/^[0-9]{10,15}$/, "Invalid referrer number"),
-  referredNumber: z.string().regex(/^[0-9]{10,15}$/, "Invalid referred number"),
-  relation: z.string().min(2),
-  referralName: z.string().min(2)
+  referredNumber: z.string().regex(/^[0-9]{10,15}$/, "Invalid referred number").optional(),
+  relation: z.string().min(2).optional(),
+  referralName: z.string().min(2).optional(),
 });
 
 

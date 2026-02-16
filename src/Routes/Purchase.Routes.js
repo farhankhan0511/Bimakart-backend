@@ -2,7 +2,7 @@ import { Router } from "express";
 
 const router = Router();
 
-import { AddReferral, BuyElderPolicy, BuyHealthPolicy, BuyLifePolicy, BuyMemebershipPlan, BuyMotorPolicy, BuyRudrakshPolicy, policyRenewal, ReferandEarn } from "../Controllers/PurchasePolicy.Controller.js";
+import { AddReferral, bimaCoinRedeem, BuyElderPolicy, BuyHealthPolicy, BuyLifePolicy, BuyMemebershipPlan, BuyMotorPolicy, BuyRudrakshPolicy, ReferandEarn } from "../Controllers/PurchasePolicy.Controller.js";
 import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
 /**
@@ -455,10 +455,10 @@ router.post("/addreferral", verifyJWT, AddReferral);
 
 /**
  * @openapi
- * /api/purchase/policyrenewal:
+ * /api/purchase/bimaCoinRedeem:
  *   post:
- *     summary: Renew an existing insurance policy
- *     description: Submits a policy renewal request with policy and contact details.
+ *     summary: Redeem Bima Coins for insurance benefits
+ *     description: Submits a request to redeem Bima Coins for insurance benefits.
  *     tags:
  *       - Purchase
  *     security:
@@ -514,7 +514,7 @@ router.post("/addreferral", verifyJWT, AddReferral);
  *       500:
  *         description: Server error
  */
-router.post("/policyrenewal", verifyJWT, policyRenewal);
+router.post("/bimacoinredeem", verifyJWT, bimaCoinRedeem);
 
 
 export default router;

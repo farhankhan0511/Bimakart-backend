@@ -360,7 +360,7 @@ export const AddReferral = asynchandler(async(req,res)=>{
 });
 
 
-export const policyRenewal = asynchandler(async (req, res) => {
+export const bimaCoinRedeem = asynchandler(async (req, res) => {
 
   const parsed = PolicyRenewalSchema.safeParse(req.body);
 
