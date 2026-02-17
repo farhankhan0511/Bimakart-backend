@@ -386,7 +386,7 @@ export const addReferralSchema = z.object({
 
 
 
-export const PolicyRenewalSchema = z.object({
+export const BimacoinRedeemSchema = z.object({
   FirstName: z
     .string()
     .min(1, "First name is required")
@@ -421,5 +421,6 @@ export const PolicyRenewalSchema = z.object({
 
  Bimacoins_Redeemed: z.coerce.number().optional(),
 Total_Discount: z.coerce.number().optional(),
+vehicleNumber: z.string().toUpperCase().regex(vehicleNumberRegex, "Invalid vehicle number format"),
 
 });

@@ -899,7 +899,7 @@ export const updatePolicyType = asynchandler(async(req,res)=>{
 });
 
 
-    return res.status(200).json(new ApiResponse(200,{},"Policy removed successfully"))
+    return res.status(200).json(new ApiResponse(200,{},"Policy Type Updated successfully")) 
 
     } catch (error) {
     logger.error("Error in updatePolicyType:", error);
