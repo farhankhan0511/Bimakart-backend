@@ -6,6 +6,7 @@ import fs from "fs";
 import logger from "../Utils/logger.js";
 import { coinSettings } from "../Models/coinSettings.Model.js";
 import { TutorialVideo } from "../Models/tutorialVideo.Model.js";
+import { loadcoinSettingsCache } from "../Lib/coinSettingCache.js";
 
 export const getLiveBanners=asynchandler(async(req,res)=>{
     try {
@@ -145,6 +146,9 @@ i
     console.error("Update setting error:", error);
     return res.status(500).json(new ApiResponse(500, {}, "Internal server error"));
      
+  }
+  finally{
+    loadcoinSettingsCache();
   }
 });
 

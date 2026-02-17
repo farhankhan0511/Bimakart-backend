@@ -15,7 +15,6 @@ const apiLimiter = rateLimit({
 });
 const app = express();
 const corsOptions = {
-  origin: process.env.FEND_URL,  
   allowedHeaders: 'Content-Type,Authorization',
 };
 app.use(cors(corsOptions));
