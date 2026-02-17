@@ -37,7 +37,7 @@ export const getBanners=asynchandler(async(req,res)=>{
 
 export const getTutorialVideos=asynchandler(async(req,res)=>{
     try {
-        const videos=await TutorialVideo.find();
+        const videos=await TutorialVideo.findOne({});
         res.status(200).json(new ApiResponse(200,videos,"Tutorial videos fetched successfully"));
     } catch (error) {
         return res.status(500).json(new ApiResponse(500,{},"Internal server error"));
@@ -99,8 +99,8 @@ export const ToggleBannerStatus=asynchandler(async(req,res)=>{
 });
 
 export const DeleteBanner=asynchandler(async(req,res)=>{
-    const {bannerId}=req.body;
     try {
+        const {bannerId}=req.body;
         if(!bannerId){
             return res.status(400).json(new ApiResponse(400,{},"Banner ID is required"))
         };
@@ -127,9 +127,9 @@ export const getcoinSettings = asynchandler(async (req, res) => {
 
 export const updateSetting = asynchandler(async (req, res) => {
   
-  const { key,value } = req.body;
-i
-  try {
+    
+    try {
+      const { key,value } = req.body;
     const setting = await coinSettings.findOne({ key });
 
     if (!setting) {

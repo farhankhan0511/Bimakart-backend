@@ -716,7 +716,8 @@ export const UploadPolicy=asynchandler(async(req,res,)=>{
     await bimapi.patch("/policiesPDFs", {
       policyNumber: extractedPolicy.id,
       mobile: mobile,
-      visibility: "1"
+      visibility: "1",
+      policyType: policyType,
     });
   } catch (err) {
     logger.warn("Basecode restore failed but DB updated:", err.message);
@@ -836,6 +837,7 @@ export const removeuploadedpolicy = asynchandler(async(req,res)=>{
     const removestatus= await bimapi.patch("/policiesPDFs",{
       policyNumber:policyNumber,
       mobile:mobile,
+      policyType: policyToRemove.policyType || "Other",
       visibility:"0"
     });
     if (removestatus.data.success !== true) {
@@ -859,3 +861,49 @@ export const removeuploadedpolicy = asynchandler(async(req,res)=>{
     res.status(500).json(new ApiResponse(500,{},"Internal Server Error"))
   }
 })
+export const updatePolicyType = asynchandler(async(req,res)=>{
+  const {mobile,policyNumber,policyType}=req.body;
+  try {
+    if(!mobile || !policyNumber || !policyType){
+      return res.status(400).json(new ApiResponse(400,{},"Mobile, Policy Number and Policy Type are required"))
+    }
+    if(!checkMobileExistsSchema.safeParse({mobile}).success){
+      return res.status(400).json(new ApiResponse(400,{},"Invalid mobile format"))
+    }
+    const existingRecord=await UserPolicies.findOne({mobile});
+    if(!existingRecord){
+      return res.status(404).json(new ApiResponse(404,{},"No policies found for this mobile number"))
+    }
+    const policiesArray=existingRecord.policies || [];
+    const policyToRemove=policiesArray.find(p=>p.id === policyNumber);
+    if(!policyToRemove){
+      return res.status(404).json(new ApiResponse(404,{},"Policy not found"))
+    }
+    const removestatus= await bimapi.patch("/policiesPDFs",{
+      policyNumber:policyNumber,
+      mobile:mobile,
+      policyType: policyType,
+      visibility:"1"
+    });
+    if (removestatus.data.success !== true) {
+      return res.status(500).json(new ApiResponse(500,{},removestatus.data.message || "Error while updating the policy type in basecode"))
+    }
+    
+   UserPolicies.updateOne(
+  { mobile, "policies.id": policyNumber },
+  {
+    $set: { "policies.$.policyType": policyType }
+  }
+).catch(err => {
+  logger.error("Policy type update failed:", err);
+});
+
+
+    return res.status(200).json(new ApiResponse(200,{},"Policy removed successfully"))
+
+    } catch (error) {
+    logger.error("Error in updatePolicyType:", error);
+    res.status(500).json(new ApiResponse(500,{},"Internal Server Error"))
+  }
+})
+

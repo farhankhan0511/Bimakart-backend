@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getUserDetails, updateUserDetails } from "../Controllers/User.Controller.js";
-import { getUserPolicies, removeuploadedpolicy, UploadPolicy } from "../Controllers/Policy.Controller.js";
+import { getUserPolicies, removeuploadedpolicy, updatePolicyType, UploadPolicy } from "../Controllers/Policy.Controller.js";
 import { upload } from "../Middlewares/upload.middleware.js";
 import { verifyJWT } from "../Middlewares/auth.middleware.js";
 
@@ -228,6 +228,9 @@ router.post("/uploadpolicy",verifyJWT,upload.single("newpolicy"),UploadPolicy);
  *         description: Internal server error
  */
 router.post("/removepolicy",verifyJWT,removeuploadedpolicy);
+
+
+router.patch("/updatepolicyType",verifyJWT,updatePolicyType);
 
 
 

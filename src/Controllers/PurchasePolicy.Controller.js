@@ -387,8 +387,6 @@ export const bimaCoinRedeem = asynchandler(async (req, res) => {
     
     params.append("oid", process.env.OID || "");
     params.append("retURL", process.env.retURL || "");
-
-    // Lead fields
     params.append("first_name", FirstName);
     params.append("last_name", LastName);
     params.append("mobile", MobilePhone);
@@ -398,6 +396,7 @@ export const bimaCoinRedeem = asynchandler(async (req, res) => {
     params.append("Policy_Type", Policy_Type);     
     params.append("Bimacoins_Redeemed", Bimacoins_Redeemed?.toString() || "0");
     params.append("Total_Discount", Total_Discount?.toString() || "0");
+    params.append("bimacoins",coinSettingsCache["referral_bonus"] || "0");
     params.append("Time_Stamp", new Date().toISOString());
 
     const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
