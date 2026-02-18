@@ -875,18 +875,18 @@ export const updatePolicyType = asynchandler(async(req,res)=>{
       return res.status(404).json(new ApiResponse(404,{},"No policies found for this mobile number"))
     }
     const policiesArray=existingRecord.policies || [];
-    const policyToRemove=policiesArray.find(p=>p.id === policyNumber);
-    if(!policyToRemove){
+    const policyToUpdate=policiesArray.find(p=>p.id === policyNumber);
+    if(!policyToUpdate){
       return res.status(404).json(new ApiResponse(404,{},"Policy not found"))
     }
-    const removestatus= await bimapi.patch("/policiesPDFs",{
+    const updatestatus= await bimapi.patch("/policiesPDFs",{
       policyNumber:policyNumber,
       mobile:mobile,
       policyType: policyType,
       visibility:"1"
     });
-    if (removestatus.data.success !== true) {
-      return res.status(500).json(new ApiResponse(500,{},removestatus.data.message || "Error while updating the policy type in basecode"))
+    if (updatestatus.data.success !== true) {
+      return res.status(500).json(new ApiResponse(500,{},updatestatus.data.message || "Error while updating the policy type in basecode"))
     }
     
    UserPolicies.updateOne(

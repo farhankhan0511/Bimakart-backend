@@ -210,15 +210,13 @@ export const BuyRudrakshPolicy = asynchandler(async (req, res) => {
       nomineeRelation,
       nomineeAge,
     } = parsed.data;
-     const params = new URLSearchParams();
-  
+     const params = new URLSearchParams();  
     // Required Salesforce fields
     params.append("oid", process.env.OID || "");
     params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
     params.append("Policy", "Application - Rudraksh Insurance");
-    params.append("source", "App");
-  
+    params.append("source", "App");  
     params.append("prefix", prefix);
     params.append("firstName", firstName);
     params.append("lastName", lastName);

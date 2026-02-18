@@ -421,6 +421,6 @@ export const BimacoinRedeemSchema = z.object({
 
  Bimacoins_Redeemed: z.coerce.number().optional(),
 Total_Discount: z.coerce.number().optional(),
-vehicleNumber: z.string().toUpperCase().regex(vehicleNumberRegex, "Invalid vehicle number format"),
+vehicleNumber: z.string().toUpperCase().regex(vehicleNumberRegex, "Invalid vehicle number format").optional(),
 
 });
