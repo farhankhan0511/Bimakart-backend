@@ -2,9 +2,9 @@ import axios from "axios";
 import { asynchandler } from "../Utils/asynchandler.js";
 import { addReferralSchema, BimacoinRedeemSchema, ElderlyInsuranceSchema, HealthInsuranceSchema, LifeInsuranceSchema, MotorPolicySchema, PlanSchema, ReferandEarnSchema, RudrakshSchema } from "../Utils/zodschemas.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
-import { success } from "zod";
 import bimapi from "../Lib/AxiosClient.js";
-import{ coinSettingCache} from "../Lib/coinSettingCache.js";
+import { getcoinSetting } from "../Lib/coinSettingCache.js";
+
 
 
 export const BuyMotorPolicy = asynchandler(async (req, res) => {
@@ -382,6 +382,7 @@ export const bimaCoinRedeem = asynchandler(async (req, res) => {
       
     } = parsed.data;
 
+    const refbimaCoins= Number(getcoinSetting("referral_bonus")) || 0;
     const params = new URLSearchParams();
 
     
@@ -396,7 +397,7 @@ export const bimaCoinRedeem = asynchandler(async (req, res) => {
     params.append("Policy_Type", Policy_Type);     
     params.append("Bimacoins_Redeemed", Bimacoins_Redeemed?.toString() || "0");
     params.append("Total_Discount", Total_Discount?.toString() || "0");
-    params.append("bimacoins",coinSettingCache["referral_bonus"] || "0");
+    params.append("bimacoins",refbimaCoins || "0");
     params.append("Time_Stamp", new Date().toISOString());
 
     if(vehicleNumber){
