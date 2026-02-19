@@ -158,7 +158,7 @@ router.patch("/toggle-banner-status",verifyAdminJWT,ToggleBannerStatus);
  *       500:
  *         description: Internal server error
  */
-router.delete("/delete-banner",verifyAdminJWT,DeleteBanner);
+router.delete("/delete-banner/:bannerId",verifyAdminJWT,DeleteBanner);
 
 
 /**

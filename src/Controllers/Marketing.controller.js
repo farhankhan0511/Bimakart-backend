@@ -100,7 +100,7 @@ export const ToggleBannerStatus=asynchandler(async(req,res)=>{
 
 export const DeleteBanner=asynchandler(async(req,res)=>{
     try {
-        const {bannerId}=req.body;
+        const {bannerId}=req.params;
         if(!bannerId){
             return res.status(400).json(new ApiResponse(400,{},"Banner ID is required"))
         };
