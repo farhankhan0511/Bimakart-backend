@@ -22,15 +22,15 @@ export const BuyMotorPolicy = asynchandler(async (req, res) => {
             params.append("retURL", process.env.retURL || "");
             params.append("oid", process.env.OID || "");
             params.append("lead_source", "Digital Medium");
-            params.append("source", "App");
-            params.append("Policy", "Application - Motor Insurance");
+            params.append("00N5j00000JGYzW", "App");
+            params.append("00N5j00000JGYtT", "Application - Motor Insurance");
 
             params.append("fullName", fullName);
-            params.append("vehicleNumber", vehicleNumber);
-            params.append("mobileNumber", mobileNumber);
-            params.append("whatsappNumber", whatsappNumber);
+            params.append("00N5j00000JGYtv", vehicleNumber);
+            params.append("mobile", mobileNumber);
+            params.append("00N5j00000JGYtw", whatsappNumber);
             params.append("vehicleType", vehicleType);
-            params.append("paymentMode", paymentMode);
+            params.append("00NC7000000P2Rp", paymentMode);
 
           const response =await axios.post(process.env.PolicyPurchaseURL, params.toString(),  {headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -72,15 +72,15 @@ export const BuyHealthPolicy = asynchandler(async (req, res) => {
     params.append("oid", process.env.OID || "");
     params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
-    params.append("source", "App");
-    params.append("Policy", "Application - Health Insurance");
-    params.append("firstName", firstName);
-    params.append("lastName", lastName);
-    params.append("insureFor", insureFor);
+    params.append("00N5j00000JGYzW", "App");
+    params.append("00N5j00000JGYtT", "Application - Health Insurance");
+    params.append("first_name", firstName);
+    params.append("last_name", lastName);
+    params.append("00NTZ000002PRn3", insureFor);
     params.append("email", email);
     params.append("mobile", mobile);
-    params.append("whatsappNumber", whatsappNumber);
-    params.append("pinCode", pinCode);
+    params.append("00N5j00000JGYtw", whatsappNumber);
+    params.append("00NTZ000002EWrh", pinCode);
 
     const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
       headers: {
@@ -118,15 +118,15 @@ export const BuyLifePolicy = asynchandler(async (req, res) => {
     params.append("oid", process.env.OID || "");
     params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
-    params.append("source", "App");
-    params.append("Policy", "Application - LifeInsurance");
-    params.append("firstName", firstName);
-    params.append("lastName", lastName);
-    params.append("insureFor", insureFor);
+    params.append("00N5j00000JGYzW", "App");
+    params.append("00N5j00000JGYtT", "Application - LifeInsurance");
+    params.append("first_name", firstName);
+    params.append("last_name", lastName);
+    params.append("00NTZ000002PRn3", insureFor);
     params.append("email", email);
     params.append("mobile", mobile);
-    params.append("whatsappNumber", whatsappNumber);
-    params.append("pinCode", pinCode);
+    params.append("00N5j00000JGYtw", whatsappNumber);
+    params.append("00NTZ000002EWrh", pinCode);
 
     const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
       headers: {
@@ -164,15 +164,15 @@ export const BuyElderPolicy = asynchandler(async (req, res) => {
     params.append("oid", process.env.OID || "");
     params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
-    params.append("source", "App");
-    params.append("Policy", "Application - Elderly Insurance");
-    params.append("firstName", firstName);
-    params.append("lastName", lastName);
-    params.append("insureFor", insureFor);
+    params.append("00N5j00000JGYzW", "App");
+    params.append("00N5j00000JGYtT", "Application - Elderly Insurance");
+    params.append("first_name", firstName);
+    params.append("last_name", lastName);
+    params.append("00NTZ000002PRn3", insureFor);
     params.append("email", email);
     params.append("mobile", mobile);
-    params.append("whatsappNumber", whatsappNumber);
-    params.append("pinCode", pinCode);
+    params.append("00N5j00000JGYtw", whatsappNumber);
+    params.append("00NTZ000002EWrh", pinCode);
 
     const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
       headers: {
@@ -216,19 +216,19 @@ export const BuyRudrakshPolicy = asynchandler(async (req, res) => {
     params.append("oid", process.env.OID || "");
     params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
-    params.append("Policy", "Application - Rudraksh Insurance");
-    params.append("source", "App");  
-    params.append("prefix", prefix);
-    params.append("firstName", firstName);
-    params.append("lastName", lastName);
-    params.append("dob", dob);
+    params.append("00NTZ000001VCCP", "Application - Rudraksh Insurance");
+    params.append("00NTZ0000021o3F", "App");  
+    params.append("00NS3000005zmxh", prefix);
+    params.append("first_name", firstName);
+    params.append("last_name", lastName);
+    params.append("00NC7000000VNuO", dob);
     params.append("mobile", mobile);
-    params.append("gender", gender);
     params.append("email", email);
-    params.append("pan", pan);
-    params.append("nomineeName", nomineeName);
-    params.append("nomineeRelation", nomineeRelation);
-    params.append("nomineeAge", nomineeAge.toString());
+    params.append("00NS3000005zo6f", gender);
+    params.append("00N5j00000JGYth", pan);
+    params.append("00NTZ0000021q0D", nomineeName);
+    params.append("00NTZ0000021q3R", nomineeRelation);
+    params.append("00NS3000005zoEj", nomineeAge.toString());
   
     const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
       headers: {
@@ -268,10 +268,10 @@ export const BuyMemebershipPlan = asynchandler(async (req, res) => {
     params.append("oid", process.env.OID || "");
     params.append("retURL", process.env.retURL);
     params.append("lead_source", "Digital Medium");
-    params.append("source", "App");
-    params.append("Policy", "Application - Membership Plan");
-    params.append("firstName", firstName);
-    params.append("lastName", lastName);
+    params.append("00N5j00000JGYzW", "App");
+    params.append("00N5j00000JGYtT", "Application - Membership Plan");
+    params.append("first_name", firstName);
+    params.append("last_name", lastName);
     params.append("email", email);
     params.append("mobile", mobile);
     params.append("plan", plan);   
@@ -386,22 +386,22 @@ export const bimaCoinRedeem = asynchandler(async (req, res) => {
     const params = new URLSearchParams();
 
     
-    params.append("oid", process.env.OID || "");
+    params.append("oid", "00DC3000002h1pJ");
     params.append("retURL", process.env.retURL || "");
     params.append("first_name", FirstName);
     params.append("last_name", LastName);
     params.append("mobile", MobilePhone);
     params.append("lead_source", "Digital Medium");
     params.append("source", "App")
-    params.append("Policy_Category", Policy_Category); 
-    params.append("Policy_Type", Policy_Type);     
-    params.append("Bimacoins_Redeemed", Bimacoins_Redeemed?.toString() || "0");
-    params.append("Total_Discount", Total_Discount?.toString() || "0");
+    params.append("00NC30000038m49", Policy_Category); 
+    params.append("00NC30000038m5l", Policy_Type);     
+    params.append("00NC30000038m8z", Bimacoins_Redeemed?.toString() || "0");
+    params.append("00NC30000038mCD", Total_Discount?.toString() || "0");
     params.append("bimacoins",refbimaCoins || "0");
-    params.append("Time_Stamp", new Date().toISOString());
+    params.append("00NC30000038mFR", new Date().toISOString());
 
     if(vehicleNumber){
-      params.append("vehicleNumber", vehicleNumber);
+      params.append("00N5j00000JGYtv", vehicleNumber);
     }
 
     const response = await axios.post(process.env.PolicyPurchaseURL, params.toString(), {
