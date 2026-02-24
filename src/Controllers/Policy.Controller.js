@@ -791,8 +791,8 @@ async function webleadTOSurepassexternalPolicy(mobile,rc_number,name,expiryDate)
       params.append("oid", process.env.OID || "");
       params.append("retURL", process.env.retURL);
       params.append("lead_source", "Digital Medium");
-      params.append("source", "App");
-      params.append("Policy", "Application - External Motor Policy");
+     params.append("00N5j00000JGYzW", "App");
+    params.append("00N5j00000JGYtT", "Application - External Motor Policy");
       params.append("policyUploader",mobile);
       params.append("rc_number",rc_number); 
       params.append("customer_name",name);
