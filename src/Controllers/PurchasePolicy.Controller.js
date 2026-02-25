@@ -25,7 +25,7 @@ export const BuyMotorPolicy = asynchandler(async (req, res) => {
             params.append("00N5j00000JGYzW", "App");
             params.append("00N5j00000JGYtT", "Application - Motor Insurance");
 
-            params.append("fullName", fullName);
+            params.append("last_name", fullName);
             params.append("00N5j00000JGYtv", vehicleNumber);
             params.append("mobile", mobileNumber);
             params.append("00N5j00000JGYtw", whatsappNumber);
